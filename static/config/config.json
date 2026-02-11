@@ -1,0 +1,25 @@
+{
+    "param":
+    {
+        "local_server": "true",
+        "local_uri": "mysql://root:@localhost/eip",
+        "user": "engineerip",
+        "Password": "engineerip@87",
+        "secret_key": "Animesh_Negi",
+        "camp_file":"static/csv/test.csv",
+        "upload":"static/upload",
+        "fb_link": "https://www.facebook.com/animesh.negi.79/",
+        "tw_link":"https://twitter.com/Animesh___Negi?s=09",
+        "gt_link": "https://github.com/animeshnegi",
+        "User" : "negi.animeh5@gmail.com",
+        "pass" : "-----",
+        "no_of_post" : "5",
+        "ac" : "negi.animesh5@gmail.com",
+        "pas" : "put here your pass",
+        "address" : "",
+        "API_KEY" : "B60C85A5F1B9C843BE0D05F2F048ECB327C16F8B1DE84AFCBD47EF7A71E89F320AE4636ED32457CF2143912A74CBA57D",
+        "BASE_URL" : "https://api.elasticemail.com/v2/email/send",
+        "RECAPTCHA_SECRET_KEY": "6LeAtKMrAAAAAL4DkWfrFod9M7h5tSmmdOz5UmBP"
+    }
+    
+}
