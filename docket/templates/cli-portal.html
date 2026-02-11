@@ -1,0 +1,2259 @@
+{% extends "d-layout.html" %}
+{% block body %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="/static/css/dashboard.css">
+
+
+<style>
+    #searchandadd {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        gap: 20px;
+    }
+
+    @media (max-width: 860px) {
+        #searchandadd {
+            display: flex;
+            gap: 5px;
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+
+
+
+<div class="modern-header" style="margin: 13px 0px 0px 10px;">
+    <div class="container-fluid">
+        <div class="header-content">
+            <div>
+                <h1 class="header-title">Project Management</h1>
+                <div class="header-subtitle">Track, manage, and collaborate on your projects</div>
+            </div>
+
+
+            <div id="searchandadd">
+                <!-- Mobile Search -->
+                <div class="d-block d-md-none">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search projects..." id="mobileSearchInput"
+                            onkeyup="searchProjectsMobile()">
+                    </div>
+                </div>
+
+                <!-- Desktop Search -->
+                <div class="d-none d-md-block">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search projects..." id="searchInput"
+                            onkeyup="searchProjects()">
+                    </div>
+                </div>
+                <button class="btn btn-light" style="height: 55px;" data-bs-toggle="modal"
+                    data-bs-target="#newProjectModal">
+                    <i class="fas fa-plus me-2"></i>New Project
+                </button>
+
+            </div>
+
+
+
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid py-4">
+    <!-- Statistics Cards -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card" onclick="filterProjects('all')">
+            <div class="stat-value" id="totalProjects">0</div>
+            <div class="stat-label">
+                <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+                <span>Total Projects</span>
+            </div>
+        </div>
+        <div class="stat-card" onclick="filterProjects('active')">
+            <div class="stat-value" id="activeProjects">0</div>
+            <div class="stat-label">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <span>Active Projects</span>
+            </div>
+        </div>
+        <div class="stat-card overdue" onclick="filterProjects('overdue')">
+            <div class="stat-value" id="overdueProjects">0</div>
+            <div class="stat-label">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <span>Overdue Projects</span>
+            </div>
+        </div>
+        <div class="stat-card completed" onclick="filterProjects('completed')">
+            <div class="stat-value" id="completedProjects">0</div>
+            <div class="stat-label">
+                <div class="stat-icon"><i class="fas fa-flag-checkered"></i></div>
+                <span>Completed</span>
+            </div>
+        </div>
+        <div class="stat-card messages" onclick="filterProjects('messages')">
+            <div class="stat-value" id="newMessages">0</div>
+            <div class="stat-label">
+                <div class="stat-icon"><i class="fas fa-envelope"></i></div>
+                <span>New Messages</span>
+            </div>
+            <div class="new-messages-badge" id="newMessagesBadge" style="display: none;">0</div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterProjects('all')">
+            <i class="fas fa-layer-group"></i>
+            All Projects
+            <span class="filter-count" id="allCount">{{ projects|length }}</span>
+        </button>
+        <button class="filter-tab" onclick="filterProjects('active')">
+            <i class="fas fa-check-circle"></i>
+            Active
+            <span class="filter-count" id="activeCount">0</span>
+        </button>
+        <button class="filter-tab" onclick="filterProjects('completed')">
+            <i class="fas fa-flag-checkered"></i>
+            Completed
+            <span class="filter-count" id="completedCount">0</span>
+        </button>
+        <button class="filter-tab" onclick="filterProjects('overdue')">
+            <i class="fas fa-exclamation-triangle"></i>
+            Overdue
+            <span class="filter-count" id="overdueCount">0</span>
+        </button>
+        <button class="filter-tab" onclick="filterProjects('messages')">
+            <i class="fas fa-envelope"></i>
+            New Messages
+            <span class="filter-count" id="messagesCount">0</span>
+        </button>
+    </div>
+
+
+
+    <!-- Projects Grid -->
+    <!-- Projects Grid -->
+    <div class="projects-grid" id="projectsGrid">
+        {% for project in projects %}
+        {# Access data from the dictionary #}
+        {% set days = project.days_until_due %}
+        {% set status = 'completed' if project.status == 'completed' else ('overdue' if days < 0 else ('urgent' if days
+            <=3 else 'active' )) %} {% set has_new_messages=project.has_new_messages %} {% set
+            new_messages_count=project.new_messages_count %} {% set file_count=project.file_count %} <div
+            class="project-card-modern {% if has_new_messages %}has-new-messages{% endif %}" data-status="{{ status }}"
+            data-days="{{ days }}" data-project-id="{{ project.id }}" data-new-messages="{{ has_new_messages }}">
+
+            {% if has_new_messages %}
+            <div class="new-messages-indicator"></div>
+            {% endif %}
+
+            <div class="project-card-header">
+                <div class="project-status-badge status-{{ status }}">
+                    {% if status == 'completed' %}
+                    <i class="fas fa-flag-checkered"></i> Completed
+                    {% elif status == 'overdue' %}
+                    <i class="fas fa-exclamation-triangle"></i> Overdue
+                    {% elif status == 'urgent' %}
+                    <i class="fas fa-clock"></i> Urgent
+                    {% else %}
+                    <i class="fas fa-check-circle"></i> Active
+                    {% endif %}
+                </div>
+                <h3 class="project-title">{{ project.name }}</h3>
+                <div class="project-ref">#{{ project.ref_id }}</div>
+                <p class="project-description">
+                    {{ project.description or 'No description provided' }}
+                </p>
+            </div>
+
+            <div class="project-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Due Date</span>
+                    <span class="meta-value">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ project.due_date.strftime('%Y-%m-%d') if project.due_date else '---' }}
+                    </span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Files</span>
+                    <span class="meta-value">
+                        <i class="fas fa-file"></i>
+                        {{ file_count }}
+                    </span>
+                </div>
+                {% if has_new_messages %}
+                <div class="meta-item">
+                    <span class="meta-label">New Messages</span>
+                    <span class="meta-value" style="color: var(--danger);">
+                        <i class="fas fa-envelope"></i>
+                        {{ new_messages_count }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="project-actions">
+                <button class="action-btn primary {% if has_new_messages %}has-new{% endif %}"
+                    onclick="openChat({{ project.id }})">
+                    <i class="fas fa-paper-plane"></i>
+                    Message
+                    {% if has_new_messages %}
+                    <span class="ms-2" style="font-size: 12px;">({{ new_messages_count }} new)</span>
+                    {% endif %}
+                </button>
+                <button class="action-btn" onclick="viewProject({{ project.id }})">
+                    <i class="fas fa-eye"></i>
+                    View
+                </button>
+            </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-folder-open"></i>
+        </div>
+        <h4>No projects yet</h4>
+        <p class="text-muted">Create your first project to get started</p>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+            <i class="fas fa-plus me-2"></i>Create First Project
+        </button>
+    </div>
+    {% endfor %}
+</div>
+</div>
+
+<!-- Chat Sidebar -->
+<div class="chat-sidebar" id="chatSidebar">
+    <div class="chat-header">
+        <div class="chat-header-content">
+            <div class="chat-avatar" id="chatAvatar">P</div>
+            <div class="chat-info">
+                <h4 id="chatProjectTitle">Project Chat</h4>
+                <p id="chatProjectRef">Select a project to start chatting</p>
+                <p class="client-email" id="chatAdminEmail"></p>
+            </div>
+        </div>
+        <button class="chat-close" onclick="closeChat()" title="Close chat">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <div class="messages-container" id="messagesContainer">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <p>Select a project to view messages</p>
+        </div>
+    </div>
+
+    <div class="chat-input-container">
+        <div id="fileAttachment" class="file-attachment" style="display: none;">
+            <i class="fas fa-file"></i>
+            <span id="fileName">file.name</span>
+            <button class="remove-file" onclick="removeAttachment()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="input-wrapper">
+            <div class="message-input-wrapper">
+                <textarea class="message-input" id="messageInput" placeholder="Type your message here..." rows="1"
+                    oninput="autoResize(this)" disabled></textarea>
+                <div class="input-actions">
+                    <button class="input-action-btn" onclick="attachFile()" title="Attach file">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                </div>
+            </div>
+            <button class="send-btn" id="sendButton" onclick="sendMessage()" disabled>
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Project Details Panel -->
+<div id="projectSlidePanel" class="slide-panel">
+    <div class="slide-panel-header">
+        <div class="panel-header-content">
+            <div>
+                <div class="project-ref-header">#<span id="panelRefId"></span></div>
+                <h2 id="panelProjectTitle" class="truncate">Project Details</h2>
+            </div>
+            <div class="header-actions">
+                <button style="margin-right: 8px;" class="close-panel-btn" onclick="closeProjectPanel()"
+                    aria-label="Close panel">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-panel-content">
+        <!-- Loading state -->
+        <div id="panelLoading" class="panel-loading">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <p>Loading project details...</p>
+        </div>
+
+        <!-- Content -->
+        <div id="panelContent" style="display: none;">
+            <!-- Project Info -->
+            <div class="panel-card" style="margin-top: 16px;">
+                <div class="card-body">
+                    <div class="project-description">
+                        <h3 class="section-title">
+                            <i class="fas fa-align-left"></i> Description
+                        </h3>
+                        <div class="description-content" id="panelDescription">
+                            No description provided
+                        </div>
+                    </div>
+
+                    <div class="project-metadata-grid">
+                        <div class="metadata-item">
+                            <div class="metadata-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Due Date</div>
+                                <div class="metadata-value" id="panelDueDate">--</div>
+                            </div>
+                        </div>
+
+                        <div class="metadata-item">
+                            <div class="metadata-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Status</div>
+                                <div class="metadata-value" id="panelStatusDisplay">--</div>
+                            </div>
+                        </div>
+
+                        <div class="metadata-item">
+                            <div class="metadata-icon">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Created On</div>
+                                <div class="metadata-value" id="panelCreatedAt">--</div>
+                            </div>
+                        </div>
+
+                        <div class="metadata-item">
+                            <div class="metadata-icon">
+                                <i class="fas fa-file"></i>
+                            </div>
+                            <div class="metadata-content">
+                                <div class="metadata-label">Files</div>
+                                <div class="metadata-value" id="panelFileCount">--</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="panel-actions">
+                        <button class="panel-btn success" id="panelCompleteBtn" style="display: none;">
+                            <i class="fas fa-check-circle"></i> Complete
+                        </button>
+                        <button class="panel-btn warning" id="panelReopenBtn" style="display: none;">
+                            <i class="fas fa-redo"></i> Reopen
+                        </button>
+                        <button class="panel-btn info" onclick="openChatInPanel()">
+                            <i class="fas fa-comments"></i> Chat
+                        </button>
+                        <button class="panel-btn danger" id="panelDeleteBtn">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Files Section -->
+            <div class="panel-section">
+                <div class="card-header" style="border-radius: 8px; margin: 0;">
+                    <h3 class="section-title"><i class="fas fa-files"></i> Shared Files</h3>
+                </div>
+
+                <!-- File Upload Form -->
+                <div id="fileUploadForm" class="upload-form-panel" style="display: none;">
+                    <form id="uploadFileForm" enctype="multipart/form-data">
+                        <input type="hidden" id="currentProjectId" name="project_id">
+                        <div class="form-group">
+                            <input type="file" id="fileInput" name="file" required class="file-input-custom"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt">
+                            <label for="fileInput" class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Choose a file</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <input type="text" name="description" placeholder="File description (optional)"
+                                class="form-control-sm">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-sm primary">
+                                <i class="fas fa-upload"></i> Upload
+                            </button>
+                            <button type="button" class="btn-sm" onclick="hideFileUpload()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- File Sections Container -->
+                <div class="file-sections-container">
+                    <!-- Admin Files Section (Files from admin) -->
+                    <div class="file-section">
+                        <div class="file-section-header">
+                            <h4><i class="fas fa-inbox"></i> Received Files</h4>
+                            <span class="file-count" id="receivedCount">0</span>
+                        </div>
+                        <div id="receivedFilesList" class="files-list-panel">
+                            <div class="empty-file-state" id="noReceivedFiles">
+                                <i class="fas fa-inbox"></i>
+                                <p>No files from admin</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Client Files Section (Files you sent) -->
+                    <div class="file-section">
+                        <div class="file-section-header">
+                            <h4><i class="fas fa-paper-plane"></i> Your Files</h4>
+                            <span class="file-count" id="sentCount">0</span>
+                        </div>
+                        <div id="sentFilesList" class="files-list-panel">
+                            <div class="empty-file-state" id="noSentFiles">
+                                <i class="fas fa-paper-plane"></i>
+                                <p>No files sent</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="panel-card">
+                <div class="card-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h3>
+                </div>
+
+                <div class="quick-actions-grid">
+                    <button class="quick-action-card" onclick="openChatInPanel()">
+                        <div class="action-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">Chat</div>
+                            <div class="action-desc">Message admin</div>
+                        </div>
+                    </button>
+
+                    <button class="quick-action-card" onclick="requestDueDateExtension()">
+                        <div class="action-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">Extend Due</div>
+                            <div class="action-desc">Request more time</div>
+                        </div>
+                    </button>
+
+                    <button class="quick-action-card" onclick="sendEmailToAdmin()">
+                        <div class="action-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">Email</div>
+                            <div class="action-desc">Send email</div>
+                        </div>
+                    </button>
+
+                    <button class="quick-action-card" onclick="downloadProjectFiles()">
+                        <div class="action-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="action-content">
+                            <div class="action-title">Export</div>
+                            <div class="action-desc">Download files</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay when panel is open -->
+<div id="panelOverlay" class="panel-overlay" onclick="closeProjectPanel()"></div>
+
+<!-- Modals -->
+<!-- Complete Project Modal -->
+<div class="modal fade" id="completeProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header border-0 justify-content-center">
+                <h5 class="modal-title text-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Mark Project as Completed
+                </h5>
+                <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"></button>
+            </div>
+            <hr class="mb-0 mt-0">
+            <div class="modal-body text-center">
+                <p class="mb-1 fw-semibold" id="completeProjectName"></p>
+                <p class="text-muted small mb-3" id="completeProjectRef"></p>
+                <p class="text-success small mb-2">
+                    This project will be moved to completed status.
+                </p>
+                <p class="text-muted small mb-3">
+                    Optional: Add a completion note or feedback
+                </p>
+                <textarea class="form-control form-control-sm" id="completionNotes" rows="3"
+                    placeholder="Add feedback (optional)..." style="resize: none;"></textarea>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-success px-4" id="confirmCompleteBtn">
+                    <i class="fas fa-check-circle me-2"></i> Complete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Project Modal -->
+<div class="modal fade" id="deleteProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-trash-alt me-2"></i> Delete Project
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <hr class="mb-0 mt-0">
+            <div class="modal-body text-center">
+                <p class="mb-1 fw-semibold" id="deleteProjectName"></p>
+                <p class="text-muted small mb-3" id="deleteProjectRef"></p>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This action cannot be undone. All project data, messages, and files will be permanently deleted.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteBtn">
+                    <i class="fas fa-trash-alt me-2"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete File Modal -->
+<div class="modal fade" id="deleteFileModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-trash me-2"></i> Delete File
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <hr class="mb-0 mt-0">
+            <div class="modal-body text-center">
+                <p>Are you sure you want to delete this file?</p>
+                <p class="small text-muted mb-3" id="deleteFileName"></p>
+                <p class="text-danger small">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    This action cannot be undone.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteFileBtn">
+                    <i class="fas fa-trash me-2"></i> Delete File
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Extend Due Date Modal -->
+<div class="modal fade" id="extendDueDateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0 rounded-4">
+            <div class="modal-header border-0 justify-content-center">
+                <h5 class="modal-title text-primary">
+                    <i class="fas fa-calendar-plus me-2"></i>
+                    Request Due Date Extension
+                </h5>
+                <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"></button>
+            </div>
+            <hr class="mb-0 mt-0">
+            <div class="modal-body">
+                <p class="mb-1 fw-semibold" id="extendProjectName"></p>
+                <p class="text-muted small mb-3" id="extendProjectRef"></p>
+                <div class="mb-3">
+                    <label for="newDueDate" class="form-label">Requested New Due Date</label>
+                    <input type="date" class="form-control" id="newDueDate" min="{{ today.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="mb-3">
+                    <label for="extensionReason" class="form-label">Reason for Extension</label>
+                    <textarea class="form-control" id="extensionReason" rows="3"
+                        placeholder="Please explain why you need more time..."></textarea>
+                </div>
+                <p class="text-muted small">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This request will be sent to the admin for approval.
+                </p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary px-4" id="confirmExtendBtn">
+                    <i class="fas fa-paper-plane me-2"></i> Send Request
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal fade" id="newProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newProjectForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Project Name *</label>
+                                <input type="text" class="form-control" name="name" required
+                                    placeholder="Enter project name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" rows="3"
+                                    placeholder="Brief description of the project"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Due Date *</label>
+                                        <input type="date" class="form-control" name="due_date" required
+                                            min="{{ today.strftime('%Y-%m-%d') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Priority</label>
+                                        <select class="form-select" name="priority">
+                                            <option value="normal">Normal</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Category (Optional)</label>
+                                <select class="form-select" name="category">
+                                    <option value="design">Drawings</option>
+                                    <option value="development">Search</option>
+                                    <option value="marketing">Office Action</option>
+                                    <option value="research">Landscape</option>
+                                    <option value="research">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Budget (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="budget" placeholder="0.00"
+                                        step="0.01">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Initial Files (Optional)</label>
+                                <div class="border rounded p-3 text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                    <p class="small text-muted mb-2">Drop files or click to browse</p>
+                                    <input type="file" class="form-control" name="files" multiple style="display: none;"
+                                        id="projectFiles">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                        onclick="document.getElementById('projectFiles').click()">
+                                        Browse Files
+                                    </button>
+                                    <!-- Display area for selected files -->
+                                    <div id="selectedFiles" class="mt-3" style="display: none;">
+                                        <div id="fileList" class="text-start"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createProject()">
+                    <i class="fas fa-plus me-2"></i>Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global variables
+    let currentProjectId = null;
+    let currentProjectData = null;
+    let selectedFile = null;
+    let chatRefreshInterval = null;
+    let currentFilter = 'all';
+    let allProjects = [];
+    let currentStats = {};
+    let deleteFileId = null;
+    let currentFiles = [];
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load all data immediately
+        loadInitialData();
+
+        // Auto-refresh statistics every 10 seconds
+        setInterval(loadStatistics, 10000);
+
+        // Auto-refresh projects every 30 seconds if panel/chat not open
+        setInterval(() => {
+            if (!document.getElementById('projectSlidePanel').classList.contains('open') &&
+                !document.getElementById('chatSidebar').classList.contains('active')) {
+                loadProjects();
+            }
+        }, 30000);
+
+        // Setup chat functionality
+        const messageInput = document.getElementById('messageInput');
+        messageInput.addEventListener('input', function () {
+            autoResize(this);
+        });
+
+        // Enter key to send message
+        messageInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Close chat and panel on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeChat();
+                closeProjectPanel();
+            }
+        });
+
+        // Modal event listeners
+        document.getElementById('confirmCompleteBtn').addEventListener('click', completeProjectHandler);
+        document.getElementById('confirmDeleteBtn').addEventListener('click', deleteProjectHandler);
+        document.getElementById('confirmExtendBtn').addEventListener('click', extendDueDateHandler);
+        document.getElementById('confirmDeleteFileBtn').addEventListener('click', deleteFileHandler);
+
+        // Setup search
+        setupSearch();
+
+        // Setup file upload form
+        setupFileUpload();
+
+        // Calculate initial counts
+        updateStatusCounts();
+    });
+
+    // Setup file upload form
+    function setupFileUpload() {
+        const form = document.getElementById('uploadFileForm');
+        if (form) {
+            form.addEventListener('submit', handleFileUpload);
+        }
+    }
+
+    // Handle file upload
+    async function handleFileUpload(e) {
+        e.preventDefault();
+
+        if (!currentProjectId) {
+            showToast('error', 'No project selected');
+            return;
+        }
+
+        const formData = new FormData(e.target);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+
+        try {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            submitBtn.disabled = true;
+
+            const response = await fetch(`/docket/upload-project-file/${currentProjectId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', 'File uploaded successfully!');
+                hideFileUpload();
+                loadProjectFiles(currentProjectId);
+            } else {
+                showToast('error', data.error || 'Failed to upload file');
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            showToast('error', 'Failed to upload file');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    // Show file upload form
+    function showFileUpload() {
+        document.getElementById('fileUploadForm').style.display = 'block';
+    }
+
+    // Hide file upload form
+    function hideFileUpload() {
+        document.getElementById('fileUploadForm').style.display = 'none';
+        document.getElementById('uploadFileForm').reset();
+    }
+
+    // Load initial data
+    async function loadInitialData() {
+        try {
+            // Load statistics first
+            await loadStatistics();
+
+            // Then load projects
+            await loadProjects();
+
+            // Update UI
+            updateFilterCounts();
+            updateStatisticsDisplay();
+
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            showToast('error', 'Failed to load dashboard data');
+        }
+    }
+
+    // Load statistics
+    async function loadStatistics() {
+        try {
+            const response = await fetch('/docket/get-project-statistics');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+
+            if (data.success) {
+                currentStats = data;
+                updateStatisticsDisplay();
+            }
+        } catch (error) {
+            console.error('Error loading statistics:', error);
+        }
+    }
+
+    // Update statistics display
+    function updateStatisticsDisplay() {
+        if (!currentStats) return;
+
+        const elements = {
+            totalProjects: currentStats.total || 0,
+            activeProjects: currentStats.active || 0,
+            overdueProjects: currentStats.overdue || 0,
+            completedProjects: currentStats.completed || 0,
+            newMessages: currentStats.new_messages || 0
+        };
+
+        Object.keys(elements).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                const currentValue = parseInt(el.textContent) || 0;
+                const newValue = elements[id];
+
+                if (currentValue !== newValue) {
+                    el.classList.add('updating');
+                    el.textContent = newValue;
+
+                    setTimeout(() => {
+                        el.classList.remove('updating');
+                    }, 300);
+                }
+            }
+        });
+
+        // Update badge smoothly
+        const badge = document.getElementById('newMessagesBadge');
+        if (currentStats.new_messages > 0) {
+            badge.textContent = currentStats.new_messages;
+            badge.style.display = 'block';
+            badge.style.animation = 'fadeIn 0.3s ease';
+        } else {
+            badge.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                badge.style.display = 'none';
+            }, 300);
+        }
+    }
+
+    // Load projects
+    async function loadProjects(preserveFilter = true) {
+        try {
+            showLoading(true);
+
+            const response = await fetch('/docket/get-all-projects');
+            const data = await response.json();
+
+            if (data.success) {
+                allProjects = data.projects;
+                currentStats = data.statistics || currentStats;
+
+                // Apply current filter
+                const filteredProjects = getFilteredProjects(currentFilter);
+                renderProjects(filteredProjects);
+
+                updateFilterCounts();
+                updateStatisticsDisplay();
+            } else {
+                showError('Failed to load projects');
+            }
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            showError('Error loading projects. Please try again.');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Get filtered projects based on current filter
+    function getFilteredProjects(filter) {
+        switch (filter) {
+            case 'active':
+                return allProjects.filter(p => {
+                    const days = p.days_until_due || calculateDaysUntilDue(p.due_date);
+                    return days >= 0 && p.status !== 'completed';
+                });
+            case 'completed':
+                return allProjects.filter(p => p.status && p.status.toLowerCase() === 'completed');
+            case 'overdue':
+                return allProjects.filter(p => {
+                    const days = p.days_until_due || calculateDaysUntilDue(p.due_date);
+                    return days < 0 && p.status !== 'completed';
+                });
+            case 'messages':
+                return allProjects.filter(p => p.has_new_messages || p.new_messages_count > 0);
+            default:
+                return allProjects;
+        }
+    }
+
+    // Show loading state
+    function showLoading(show) {
+        const grid = document.getElementById('projectsGrid');
+        if (show && grid.innerHTML.includes('empty-state')) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <p>Loading projects...</p>
+                </div>
+            `;
+        }
+    }
+
+    // Show error state
+    function showError(message) {
+        const grid = document.getElementById('projectsGrid');
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p>${message}</p>
+                <button class="btn btn-primary mt-3" onclick="loadProjects()">
+                    <i class="fas fa-sync-alt me-2"></i>Retry
+                </button>
+            </div>
+        `;
+    }
+
+    // Render projects to grid
+    function renderProjects(projects) {
+        const grid = document.getElementById('projectsGrid');
+
+        if (!projects || projects.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h4>No projects found</h4>
+                    <p class="text-muted">There are no projects matching your criteria</p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = projects.map(project => {
+            const days = project.days_until_due || calculateDaysUntilDue(project.due_date);
+            const hasNewMessages = project.has_new_messages || project.new_messages_count > 0;
+            const newMessagesCount = project.new_messages_count || 0;
+            const statusInfo = getStatusInfo(project);
+
+            return `
+                <div class="project-card-modern ${hasNewMessages ? 'has-new-messages' : ''}" 
+                     data-status="${statusInfo.status}" 
+                     data-days="${days}" 
+                     data-project-id="${project.id}" 
+                     data-new-messages="${hasNewMessages}">
+                    
+                    ${hasNewMessages ? '<div class="new-messages-indicator"></div>' : ''}
+                    
+                    <div class="project-card-header">
+                        <div class="project-status-badge status-${statusInfo.status}">
+                            <i class="fas ${statusInfo.icon}"></i> ${statusInfo.text}
+                        </div>
+                        <h3 class="project-title">${project.name}</h3>
+                        <div class="project-ref">#${project.ref_id}</div>
+                        <p class="project-description">
+                            ${project.description || 'No description provided'}
+                        </p>
+                    </div>
+
+                    <div class="project-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Due Date</span>
+                            <span class="meta-value">
+                                <i class="fas fa-calendar-alt"></i>
+                                ${formatDate(project.due_date)}
+                            </span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Files</span>
+                            <span class="meta-value">
+                                <i class="fas fa-file"></i>
+                                ${project.file_count || 0}
+                            </span>
+                        </div>
+                        ${hasNewMessages ? `
+                        <div class="meta-item">
+                            <span class="meta-label">New Messages</span>
+                            <span class="meta-value" style="color: var(--danger);">
+                                <i class="fas fa-envelope"></i>
+                                ${newMessagesCount}
+                            </span>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="project-actions">
+                        <button class="action-btn primary ${hasNewMessages ? 'has-new' : ''}" onclick="openChat(${project.id})">
+                            <i class="fas fa-paper-plane"></i>
+                            Message
+                            ${hasNewMessages ? `<span class="ms-2" style="font-size: 12px;">(${newMessagesCount} new)</span>` : ''}
+                        </button>
+                        <button class="action-btn" onclick="viewProject(${project.id})">
+                            <i class="fas fa-eye"></i>
+                            View
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Helper function to get status info
+    function getStatusInfo(project) {
+        const days = project.days_until_due || calculateDaysUntilDue(project.due_date);
+
+        if (project.status && project.status.toLowerCase() === 'completed') {
+            return { status: 'completed', text: 'Completed', icon: 'fa-flag-checkered' };
+        } else if (days < 0) {
+            return { status: 'overdue', text: 'Overdue', icon: 'fa-exclamation-triangle' };
+        } else if (days <= 3) {
+            return { status: 'urgent', text: 'Urgent', icon: 'fa-clock' };
+        } else {
+            return { status: 'active', text: 'Active', icon: 'fa-check-circle' };
+        }
+    }
+
+    // Update filter counts
+    function updateFilterCounts() {
+        const counts = {
+            all: allProjects.length,
+            active: allProjects.filter(p => {
+                const days = p.days_until_due || calculateDaysUntilDue(p.due_date);
+                return days >= 0 && p.status !== 'completed';
+            }).length,
+            completed: allProjects.filter(p => p.status && p.status.toLowerCase() === 'completed').length,
+            overdue: allProjects.filter(p => {
+                const days = p.days_until_due || calculateDaysUntilDue(p.due_date);
+                return days < 0 && p.status !== 'completed';
+            }).length,
+            messages: allProjects.filter(p => p.has_new_messages || p.new_messages_count > 0).length
+        };
+
+        for (const [key, value] of Object.entries(counts)) {
+            const element = document.getElementById(`${key}Count`);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+    }
+
+    // Filter projects
+    function filterProjects(filter) {
+        currentFilter = filter;
+
+        // Update active tab
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Apply the filter
+        const filteredProjects = getFilteredProjects(filter);
+        renderProjects(filteredProjects);
+    }
+
+    // Setup search
+    function setupSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const mobileSearchInput = document.getElementById('mobileSearchInput');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', searchProjects);
+        }
+        if (mobileSearchInput) {
+            mobileSearchInput.addEventListener('input', searchProjectsMobile);
+        }
+    }
+
+    function searchProjects() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        searchProjectsByTerm(searchTerm);
+    }
+
+    function searchProjectsMobile() {
+        const searchTerm = document.getElementById('mobileSearchInput').value.toLowerCase();
+        searchProjectsByTerm(searchTerm);
+    }
+
+    function searchProjectsByTerm(searchTerm) {
+        if (!searchTerm.trim()) {
+            filterProjects(currentFilter);
+            return;
+        }
+
+        const filteredProjects = allProjects.filter(project => {
+            return (
+                project.name.toLowerCase().includes(searchTerm) ||
+                project.ref_id.toLowerCase().includes(searchTerm) ||
+                project.description.toLowerCase().includes(searchTerm)
+            );
+        });
+
+        renderProjects(filteredProjects);
+    }
+
+    // Refresh dashboard
+    function refreshDashboard() {
+        loadStatistics();
+        loadProjects();
+        showToast('info', 'Refreshing dashboard...');
+    }
+
+    // Chat functions
+    async function openChat(projectId) {
+        currentProjectId = projectId;
+        const sidebar = document.getElementById('chatSidebar');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // Mark messages as seen
+        await markMessagesAsSeen(projectId);
+
+        // Enable input and button
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+
+        // Open sidebar
+        sidebar.classList.add('active');
+
+        // Load project info and messages
+        await loadChatProjectInfo(projectId);
+        await loadMessages(true); // true = initial load
+
+        // Focus input
+        setTimeout(() => {
+            messageInput.focus();
+        }, 100);
+
+        // Start auto-refresh for chat
+        if (chatRefreshInterval) {
+            clearInterval(chatRefreshInterval);
+        }
+        chatRefreshInterval = setInterval(() => {
+            loadMessages(false);
+        }, 5000);
+
+        // Refresh projects to update new message indicators
+        loadProjects();
+    }
+
+    async function markMessagesAsSeen(projectId) {
+        try {
+            const response = await fetch(`/docket/api/mark-messages-seen/${projectId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Error marking messages as seen:', error);
+            return { success: false };
+        }
+    }
+
+    async function loadChatProjectInfo(projectId) {
+        try {
+            const response = await fetch(`/docket/get-project-info/${projectId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const project = data.project;
+                document.getElementById('chatProjectTitle').textContent = project.name;
+                document.getElementById('chatProjectRef').textContent = `#${project.ref_id}`;
+                document.getElementById('chatAvatar').textContent = project.name.charAt(0).toUpperCase();
+            }
+        } catch (error) {
+            console.error('Error loading chat project info:', error);
+        }
+    }
+
+    async function loadMessages(initialLoad = false) {
+        if (!currentProjectId) return;
+
+        const container = document.getElementById('messagesContainer');
+
+        try {
+            const response = await fetch(`/docket/get-project-messages/${currentProjectId}`);
+            const messages = await response.json();
+
+            if (!messages || messages.length === 0) {
+                if (container.innerHTML.includes('empty-state')) return;
+
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <p>No messages yet. Start the conversation!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let messagesHTML = '';
+            let hasUnseenMessages = false;
+
+            messages.forEach(msg => {
+                const isSent = !msg.is_admin; // For client, is_admin = false means sent by client
+                const time = formatTime(msg.created_at);
+                const senderInitial = msg.sender.charAt(0).toUpperCase();
+
+                // Check if message is unseen (only for admin messages)
+                const isUnseen = msg.is_admin && !msg.is_seen;
+
+                messagesHTML += `
+                <div class="message ${isSent ? 'sent' : 'received'} ${isUnseen ? 'unseen' : ''}" 
+                     data-message-id="${msg.id}" 
+                     data-is-seen="${msg.is_seen}">
+                    <div class="message-avatar">${senderInitial}</div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            ${msg.message}
+                            ${isUnseen ? '<span class="unseen-badge" title="New message"></span>' : ''}
+                        </div>
+            `;
+
+
+                if (msg.has_file && msg.file && !msg.file.is_deleted) {
+                    const fileIcon = getFileIcon(msg.file.file_type);
+                    const fileSize = formatFileSize(msg.file.file_size);
+
+                    messagesHTML += `
+                        <div class="message-file-attachment" data-file-id="${msg.file.id}">
+                            <div class="file-attachment-preview">
+                                <i class="fas ${fileIcon}"></i>
+                                <div class="file-info">
+                                    <div class="file-name">${msg.file.filename}</div>
+                                    <div class="file-meta">${fileSize} • ${msg.file.file_type || 'File'}</div>
+                                </div>
+                                <button class="download-attachment" onclick="downloadFile(${msg.file.id})" 
+                                        title="Download ${msg.file.filename}">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                ${isSent ? `<button class="delete-attachment ms-2" onclick="showDeleteFileModal(${msg.file.id}, '${msg.file.filename}')" title="Delete file">
+                                    <i class="fas fa-trash text-danger"></i>
+                                </button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                messagesHTML += `
+                            <span class="message-time">${time}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = messagesHTML;
+
+            if (hasUnseenMessages && initialLoad) {
+                await markMessagesAsSeen(currentProjectId);
+            }
+
+            // Scroll to bottom if initial load or if user was already at bottom
+            if (initialLoad || isAtBottom()) {
+                container.scrollTop = container.scrollHeight;
+            }
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+
+    function isAtBottom() {
+        const container = document.getElementById('messagesContainer');
+        if (!container) return true;
+        return Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 50;
+    }
+
+    async function sendMessage() {
+        if (!currentProjectId) return;
+
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        const button = document.getElementById('sendButton');
+
+        if (!message && !selectedFile) {
+            input.focus();
+            return;
+        }
+
+        try {
+            button.disabled = true;
+
+            // Create FormData
+            const formData = new FormData();
+            formData.append('action', 'send_message');
+            formData.append('project_id', currentProjectId);
+            formData.append('message', message || '[File attached]');
+
+            if (selectedFile) {
+                formData.append('file', selectedFile);
+            }
+
+            // Send to server
+            const response = await fetch('/docket/api/send-msg', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Clear input and reset
+                input.value = '';
+                input.style.height = 'auto';
+
+                // Remove attachment if exists
+                if (selectedFile) {
+                    removeAttachment();
+                }
+
+                // Reload messages
+                await loadMessages();
+
+                // Re-enable button
+                button.disabled = false;
+                input.focus();
+
+                // Refresh dashboard to update new messages count
+                loadStatistics();
+                loadProjects();
+            } else {
+                console.error("Server error:", data.error);
+                showToast('error', 'Error: ' + data.error);
+                button.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            showToast('error', 'Failed to send message. Please try again.');
+            button.disabled = false;
+        }
+    }
+
+    function attachFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '*/*';
+        input.onchange = (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                document.getElementById('fileName').textContent = selectedFile.name;
+                document.getElementById('fileAttachment').style.display = 'flex';
+            }
+        };
+        input.click();
+    }
+
+    function removeAttachment() {
+        selectedFile = null;
+        document.getElementById('fileAttachment').style.display = 'none';
+    }
+
+    function downloadFile(fileId) {
+        window.open(`/docket/download-project-file/${fileId}`, '_blank');
+    }
+
+    // Show delete file modal
+    function showDeleteFileModal(fileId, fileName) {
+        deleteFileId = fileId;
+        document.getElementById('deleteFileName').textContent = fileName;
+        const modal = new bootstrap.Modal(document.getElementById('deleteFileModal'));
+        modal.show();
+    }
+
+    // Delete file handler
+    async function deleteFileHandler() {
+        if (!deleteFileId) return;
+
+        try {
+            const response = await fetch(`/docket/delete-project-file/${deleteFileId}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', 'File deleted successfully');
+                bootstrap.Modal.getInstance(document.getElementById('deleteFileModal')).hide();
+
+                // Refresh file lists and messages
+                if (currentProjectId) {
+                    await loadProjectFiles(currentProjectId);
+                    await loadMessages();
+                }
+            } else {
+                showToast('error', data.error || 'Failed to delete file');
+            }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            showToast('error', 'Failed to delete file');
+        }
+    }
+
+    function closeChat() {
+        const sidebar = document.getElementById('chatSidebar');
+        sidebar.classList.remove('active');
+
+        // Clear interval
+        if (chatRefreshInterval) {
+            clearInterval(chatRefreshInterval);
+            chatRefreshInterval = null;
+        }
+
+        // Reset
+        currentProjectId = null;
+        document.getElementById('messageInput').disabled = true;
+        document.getElementById('sendButton').disabled = true;
+        document.getElementById('messagesContainer').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <p>Select a project to view messages</p>
+            </div>
+        `;
+    }
+
+    // Project panel functions
+    async function viewProject(projectId) {
+        currentProjectId = projectId;
+
+        // Show panel with animation
+        document.getElementById('projectSlidePanel').classList.add('open');
+        document.getElementById('panelOverlay').classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Show loading state
+        document.getElementById('panelLoading').style.display = 'flex';
+        document.getElementById('panelContent').style.display = 'none';
+
+        try {
+            // Fetch project data from API
+            const response = await fetch(`/docket/api/project/${projectId}`);
+            const data = await response.json();
+
+            currentProjectData = data;
+            updatePanelContent(data);
+            await loadProjectFiles(projectId);
+
+            // Show content
+            document.getElementById('panelLoading').style.display = 'none';
+            document.getElementById('panelContent').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading project:', error);
+            document.getElementById('panelLoading').innerHTML =
+                '<p style="color: var(--danger);">Error loading project details</p>';
+        }
+    }
+
+    function updatePanelContent(project) {
+        document.getElementById('panelProjectTitle').textContent = project.name;
+        document.getElementById('panelRefId').textContent = project.ref_id;
+        document.getElementById('panelDescription').textContent = project.description || 'No description provided';
+        document.getElementById('panelDueDate').textContent = formatDate(project.due_date);
+        document.getElementById('panelCreatedAt').textContent = formatDate(project.created_at);
+        document.getElementById('panelFileCount').textContent = project.file_count || 0;
+
+        const statusEl = document.getElementById('panelStatusDisplay');
+        const completeBtn = document.getElementById('panelCompleteBtn');
+        const reopenBtn = document.getElementById('panelReopenBtn');
+        const deleteBtn = document.getElementById('panelDeleteBtn');
+
+        if (project.status && project.status.toLowerCase() === 'completed') {
+            statusEl.textContent = 'Completed';
+            statusEl.style.color = 'var(--success)';
+            completeBtn.style.display = 'none';
+            reopenBtn.style.display = 'block';
+            deleteBtn.style.display = 'block';
+
+            // Set up reopen button
+            reopenBtn.onclick = function () {
+                reopenProject(project.id);
+            };
+        } else {
+            const days = calculateDaysUntilDue(project.due_date);
+            if (days < 0) {
+                statusEl.textContent = `${Math.abs(days)} days overdue`;
+                statusEl.style.color = 'var(--danger)';
+            } else if (days <= 3) {
+                statusEl.textContent = `${days} days left (Urgent)`;
+                statusEl.style.color = 'var(--warning)';
+            } else {
+                statusEl.textContent = `${days} days left`;
+                statusEl.style.color = 'var(--success)';
+            }
+
+            completeBtn.style.display = 'block';
+            reopenBtn.style.display = 'none';
+            deleteBtn.style.display = 'block';
+
+            // Set up complete button
+            completeBtn.onclick = function () {
+                showCompleteModal(project);
+            };
+        }
+
+        // Set up delete button
+        deleteBtn.onclick = function () {
+            showDeleteModal(project);
+        };
+    }
+
+    async function loadProjectFiles(projectId) {
+        try {
+            // Get messages with files
+            const messagesResponse = await fetch(`/docket/get-project-messages/${projectId}`);
+            const messages = await messagesResponse.json();
+
+            // Get additional files
+            const filesResponse = await fetch(`/docket/get-project-files/${projectId}/files`);
+            const additionalFiles = await filesResponse.json();
+
+            // Filter messages with files
+            const filesWithMessages = messages.filter(msg => msg.has_file && msg.file);
+
+            // Separate files into admin and client
+            const adminFiles = filesWithMessages.filter(msg => msg.is_admin);
+            const clientFiles = filesWithMessages.filter(msg => !msg.is_admin);
+
+            // Add additional files to client files
+            if (additionalFiles && Array.isArray(additionalFiles)) {
+                additionalFiles.forEach(file => {
+                    clientFiles.push({
+                        file: file,
+                        is_admin: false,
+                        sender: 'You'
+                    });
+                });
+            }
+
+            // Update counts
+            document.getElementById('receivedCount').textContent = adminFiles.length;
+            document.getElementById('sentCount').textContent = clientFiles.length;
+
+            // Render admin files (received)
+            renderFileList('receivedFilesList', adminFiles, 'noReceivedFiles');
+
+            // Render client files (sent) with delete option
+            renderFileList('sentFilesList', clientFiles, 'noSentFiles', true);
+
+        } catch (error) {
+            console.error('Error loading files:', error);
+        }
+    }
+
+    function renderFileList(containerId, files, emptyStateId, showDelete = false) {
+        const container = document.getElementById(containerId);
+        const emptyState = document.getElementById(emptyStateId);
+
+        if (!container) return;
+
+        if (files.length === 0) {
+            container.innerHTML = '';
+            if (emptyState) {
+                container.appendChild(emptyState);
+                emptyState.style.display = 'flex';
+            }
+            return;
+        }
+
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+
+        container.innerHTML = files.map(msg => {
+            const file = msg.file;
+            const isSent = !msg.is_admin;
+
+            return `
+                <div class="file-item-panel" data-file-id="${file.id}">
+                    <div class="status-badge-container">
+                        ${isSent ?
+                    '<span class="status-badge sent-badge">Sent</span>' :
+                    '<span class="status-badge received-badge">Received</span>'
+                }
+                    </div>
+                    
+                    <div class="file-info-top">
+                        <div class="file-icon-name">
+                            <div class="file-icon-panel">
+                                <i class="fas ${getFileIcon(file.file_type)}"></i>
+                            </div>
+                            <div class="file-name-container">
+                                <div class="file-name-panel">${file.filename}</div>
+                                <div class="uploader-info">${msg.sender}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="file-meta-bottom">
+                        <div class="file-meta-left">
+                            <div class="upload-date">${formatDate(file.uploaded_at)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="file-actions-panel">
+                        <button class="btn-action download" onclick="downloadFile(${file.id})" title="Download">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        ${showDelete ? `<button class="btn-action delete" onclick="showDeleteFileModal(${file.id}, '${file.filename}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function closeProjectPanel() {
+        document.getElementById('projectSlidePanel').classList.remove('open');
+        document.getElementById('panelOverlay').classList.remove('active');
+        document.body.style.overflow = 'auto';
+
+        // Reset everything
+        document.getElementById('panelContent').style.display = 'none';
+        document.getElementById('panelLoading').style.display = 'flex';
+        document.getElementById('panelLoading').innerHTML = `
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <p>Loading project details...</p>
+        `;
+
+        currentProjectId = null;
+        currentProjectData = null;
+    }
+
+    function openChatInPanel() {
+        if (currentProjectId) {
+            closeProjectPanel();
+            setTimeout(() => openChat(currentProjectId), 300);
+        }
+    }
+
+    function sendEmailToAdmin() {
+        // You can implement email functionality here
+        showToast('info', 'Email functionality coming soon!');
+    }
+
+    function downloadProjectFiles() {
+        if (currentProjectId) {
+            window.open(`/docket/download-all-project-files/${currentProjectId}`, '_blank');
+        }
+    }
+
+    function requestDueDateExtension() {
+        if (!currentProjectData) return;
+
+        document.getElementById('extendProjectName').textContent = currentProjectData.name;
+        document.getElementById('extendProjectRef').textContent = `#${currentProjectData.ref_id}`;
+
+        // Set min date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('newDueDate').min = tomorrow.toISOString().split('T')[0];
+
+        const modal = new bootstrap.Modal(document.getElementById('extendDueDateModal'));
+        modal.show();
+    }
+
+    function showCompleteModal(project) {
+        document.getElementById('completeProjectName').textContent = project.name;
+        document.getElementById('completeProjectRef').textContent = `#${project.ref_id}`;
+
+        const modal = new bootstrap.Modal(document.getElementById('completeProjectModal'));
+        modal.show();
+    }
+
+    function showDeleteModal(project) {
+        document.getElementById('deleteProjectName').textContent = project.name;
+        document.getElementById('deleteProjectRef').textContent = `#${project.ref_id}`;
+
+        const modal = new bootstrap.Modal(document.getElementById('deleteProjectModal'));
+        modal.show();
+    }
+
+    async function completeProjectHandler() {
+        if (!currentProjectData) return;
+
+        try {
+            const notes = document.getElementById('completionNotes').value;
+
+            const response = await fetch(`/docket/api/project/${currentProjectData.id}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    notes: notes
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', 'Project marked as completed!');
+                closeProjectPanel();
+                loadProjects();
+                loadStatistics();
+
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('completeProjectModal')).hide();
+            } else {
+                showToast('error', 'Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error completing project:', error);
+            showToast('error', 'Failed to complete project');
+        }
+    }
+
+    async function reopenProject(projectId) {
+        try {
+            const response = await fetch(`/docket/api/project/${projectId}/reopen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', 'Project reopened successfully!');
+                closeProjectPanel();
+                loadProjects();
+                loadStatistics();
+            } else {
+                showToast('error', 'Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error reopening project:', error);
+            showToast('error', 'Failed to reopen project');
+        }
+    }
+
+    async function deleteProjectHandler() {
+        if (!currentProjectData) return;
+
+        try {
+            const response = await fetch(`/docket/api/delete-project/${currentProjectData.id}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', 'Project deleted successfully!');
+                closeProjectPanel();
+                loadProjects();
+                loadStatistics();
+
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('deleteProjectModal')).hide();
+            } else {
+                showToast('error', 'Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            showToast('error', 'Failed to delete project');
+        }
+    }
+
+    async function extendDueDateHandler() {
+        if (!currentProjectData) return;
+
+        const newDueDate = document.getElementById('newDueDate').value;
+        const reason = document.getElementById('extensionReason').value;
+
+        if (!newDueDate) {
+            showToast('error', 'Please select a new due date');
+            return;
+        }
+
+        if (!reason) {
+            showToast('error', 'Please provide a reason for the extension');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/docket/api/project/${currentProjectData.id}/request-extension`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    due_date: newDueDate,
+                    reason: reason
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast('success', 'Extension request sent to admin!');
+                closeProjectPanel();
+
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('extendDueDateModal')).hide();
+            } else {
+                showToast('error', 'Error: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Error requesting extension:', error);
+            showToast('error', 'Failed to send extension request');
+        }
+    }
+
+    // Create project function
+    async function createProject() {
+        const submitBtn = document.querySelector('button[onclick="createProject()"]');
+        if (submitBtn.disabled) {
+            console.log("Already submitting, please wait...");
+            return;
+        }
+
+        try {
+            // Show loading state
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData();
+
+            // Get form values manually
+            const form = document.getElementById('newProjectForm');
+            const name = form.querySelector('[name="name"]').value;
+            const description = form.querySelector('[name="description"]').value;
+            const due_date = form.querySelector('[name="due_date"]').value;
+            const category = form.querySelector('[name="category"]').value;
+            const budget = form.querySelector('[name="budget"]').value;
+            const priority = form.querySelector('[name="priority"]').value;
+
+            // Append form data
+            formData.append("action", "create_project");
+            formData.append("name", name);
+            formData.append("description", description);
+            formData.append("due_date", due_date);
+            formData.append("category", category);
+            formData.append("budget", budget);
+            formData.append("priority", priority);
+
+            // Append files
+            if (currentFiles.length > 0) {
+                currentFiles.forEach((file, index) => {
+                    formData.append("files[]", file);
+                });
+            }
+
+            console.log(`Sending ${currentFiles.length} files to server`);
+
+            const response = await fetch('/docket/My-desk', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Close modal
+                const modalEl = document.getElementById('newProjectModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+
+                // Reset form and files
+                form.reset();
+                currentFiles = [];
+                updateFileDisplay();
+
+                // Show success message
+                showToast('success', 'Project created successfully!');
+
+                // Reload page after delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('error', 'Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            showToast('error', 'Failed to create project');
+        } finally {
+            // Restore button state
+            const submitBtn = document.querySelector('button[onclick="createProject()"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+    }
+
+    // File handling functions
+    function updateFileDisplay() {
+        const selectedFilesDiv = document.getElementById('selectedFiles');
+        const fileListDiv = document.getElementById('fileList');
+
+        if (currentFiles.length > 0) {
+            if (currentFiles.length === 1) {
+                fileListDiv.innerHTML = `
+                <div class="alert alert-info p-2 mb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-file me-2"></i>
+                            <span>Selected: <strong>${currentFiles[0].name}</strong></span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                onclick="removeFile(0)" title="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            } else {
+                fileListDiv.innerHTML = `
+                <div class="alert alert-info p-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-folder-open me-2"></i>
+                            <span><strong>${currentFiles.length} files selected:</strong></span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                onclick="removeAllFiles()" title="Remove all files">
+                            <i class="fas fa-times-circle"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        ${currentFiles.map((file, index) => `
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file text-muted me-2" style="font-size: 0.8rem;"></i>
+                                    <div>
+                                        <div class="text-truncate" style="max-width: 250px;">${file.name}</div>
+                                        <small class="text-muted">${formatFileSize(file.size)}</small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" 
+                                        onclick="removeFile(${index})" title="Remove this file">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            }
+
+            selectedFilesDiv.style.display = 'block';
+        } else {
+            selectedFilesDiv.style.display = 'none';
+        }
+
+        updateFileInput();
+    }
+
+    function removeFile(index) {
+        currentFiles.splice(index, 1);
+        updateFileDisplay();
+    }
+
+    function removeAllFiles() {
+        currentFiles = [];
+        updateFileDisplay();
+    }
+
+    function updateFileInput() {
+        const fileInput = document.getElementById('projectFiles');
+        const dataTransfer = new DataTransfer();
+
+        currentFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+
+        fileInput.files = dataTransfer.files;
+    }
+
+    // Handle file input change
+    document.getElementById('projectFiles').addEventListener('change', function (e) {
+        const newFiles = Array.from(e.target.files);
+
+        newFiles.forEach(newFile => {
+            const exists = currentFiles.some(existingFile =>
+                existingFile.name === newFile.name &&
+                existingFile.size === newFile.size &&
+                existingFile.lastModified === newFile.lastModified
+            );
+
+            if (!exists) {
+                currentFiles.push(newFile);
+            }
+        });
+
+        updateFileDisplay();
+    });
+
+    // Helper functions
+    function autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    function calculateDaysUntilDue(dueDate) {
+        if (!dueDate) return 0;
+        const due = new Date(dueDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        due.setHours(0, 0, 0, 0);
+        const diffTime = due - today;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '--';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function formatTime(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
+    function getFileIcon(fileType) {
+        const type = (fileType || '').toLowerCase();
+        if (type.includes('pdf')) return 'fa-file-pdf';
+        if (type.includes('doc')) return 'fa-file-word';
+        if (type.includes('xls')) return 'fa-file-excel';
+        if (type.includes('ppt')) return 'fa-file-powerpoint';
+        if (type.includes('image')) return 'fa-file-image';
+        if (type.includes('zip') || type.includes('rar') || type.includes('tar')) return 'fa-file-archive';
+        if (type.includes('txt')) return 'fa-file-alt';
+        return 'fa-file';
+    }
+
+    function formatFileSize(bytes) {
+        if (!bytes) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function showToast(type, message) {
+        // Create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        toastContainer.insertAdjacentHTML('afterbegin', toastHtml);
+        const toastEl = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+
+        // Remove toast after it's hidden
+        toastEl.addEventListener('hidden.bs.toast', function () {
+            this.remove();
+        });
+    }
+
+    function updateStatusCounts() {
+        const projectCards = document.querySelectorAll('.project-card-modern');
+        let activeCount = 0;
+        let completedCount = 0;
+        let overdueCount = 0;
+        let messagesCount = 0;
+
+        projectCards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const hasNewMessages = card.getAttribute('data-new-messages') === 'true';
+
+            if (status === 'active') activeCount++;
+            else if (status === 'completed') completedCount++;
+            else if (status === 'overdue') overdueCount++;
+            if (hasNewMessages) messagesCount++;
+        });
+
+        document.getElementById('activeCount').textContent = activeCount;
+        document.getElementById('completedCount').textContent = completedCount;
+        document.getElementById('overdueCount').textContent = overdueCount;
+        document.getElementById('messagesCount').textContent = messagesCount;
+    }
+</script>
+
+<!-- Add drag and drop support -->
+<script>
+    const dropArea = document.querySelector('.border.rounded');
+
+    if (dropArea) {
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = '#f8f9fa';
+            dropArea.style.borderColor = '#0d6efd';
+        });
+
+        dropArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = '';
+            dropArea.style.borderColor = '';
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.backgroundColor = '';
+            dropArea.style.borderColor = '';
+
+            if (e.dataTransfer.files.length) {
+                const newFiles = Array.from(e.dataTransfer.files);
+
+                newFiles.forEach(newFile => {
+                    const exists = currentFiles.some(existingFile =>
+                        existingFile.name === newFile.name &&
+                        existingFile.size === newFile.size &&
+                        existingFile.lastModified === newFile.lastModified
+                    );
+
+                    if (!exists) {
+                        currentFiles.push(newFile);
+                    }
+                });
+
+                updateFileDisplay();
+            }
+        });
+    }
+
+
+
+</script>
+{% endblock %}

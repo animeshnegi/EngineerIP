@@ -1,0 +1,1116 @@
+{% extends "d-layout.html" %}
+{% block body %}
+
+<div class="upload-container">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <div class="page-header">
+                    <p class="page-subtitle">Upload trademark and patent cases in bulk format</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section (Hidden by default) -->
+        <div id="progress-section" class="row justify-content-center mb-4" style="display: none;">
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-cloud-download me-2"></i>
+                            Processing Files
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="processing-progress">
+                            <!-- Progress Bar -->
+                            <div class="progress mb-4" style="height: 25px;">
+                                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                    role="progressbar" style="width: 0%">
+                                    <span id="progress-text">0%</span>
+                                </div>
+                            </div>
+
+                            <!-- Progress Details -->
+                            <div class="row text-center mb-4">
+                                <div class="col-md-3">
+                                    <div class="stat-card bg-success text-white">
+                                        <h5 id="processed-count">0</h5>
+                                        <small>Processed</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-card bg-info text-white">
+                                        <h5 id="successful-count">0</h5>
+                                        <small>Successful</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-card bg-warning text-white">
+                                        <h5 id="failed-count">0</h5>
+                                        <small>Failed</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="stat-card bg-primary text-white">
+                                        <h5 id="total-count">0</h5>
+                                        <small>Total</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Current Item -->
+                            <div class="current-item alert alert-info">
+                                <i class="bi bi-arrow-repeat spinner me-2"></i>
+                                <span id="current-item">Initializing processing...</span>
+                            </div>
+
+                            <!-- Results Section -->
+                            <div id="results-section" style="display: none;">
+                                <hr>
+                                <div class="alert alert-success">
+                                    <h5><i class="bi bi-check-circle me-2"></i>Processing Complete!</h5>
+                                    <p id="results-summary"></p>
+                                </div>
+                                <div class="text-center">
+                                    <button onclick="resetUploadForms()" class="btn btn-primary">
+                                        <i class="bi bi-upload me-2"></i>Upload More Files
+                                    </button>
+                                    <button id="download-btn" class="btn btn-success ms-2" style="display: none;">
+                                        <i class="bi bi-download me-2"></i>Download Results
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Sections -->
+        <div id="upload-sections" class="row g-4">
+            <!-- Patent Section -->
+            <div class="col-lg-6">
+                <div class="upload-section">
+                    <div class="section-header">
+                        <i class="bi bi-file-post"></i>
+                        <h3 class="section-title">Patent Upload</h3>
+                    </div>
+
+                    <div class="section-body">
+                        <!-- Instructions -->
+                        <div class="instructions">
+                            <h5 class="instructions-title">
+                                <i class="bi bi-info-circle"></i>
+                                File Requirements
+                            </h5>
+                            <ul class="requirements-list">
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    CSV or Excel format (.csv, .xlsx)
+                                </li>
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    No headers or column names
+                                </li>
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    Patent/PCT/Design numbers
+                                </li>
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    Clean numbers only (Format: 18792169 (not 18/792,169))
+                                </li>
+                            </ul>
+
+                            <div class="format-example">
+                                <label class="example-label">Correct Format:</label>
+                                <div class="example-content">
+                                    <code>18792169<br>PCT/US2023/04567<br>29543678</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Form -->
+                        <!-- FIXED: Changed action from debug_upload to addcase -->
+                        <form method="POST" action="{{ url_for('docket.addcase') }}" enctype="multipart/form-data"
+                            class="upload-form" id="patent-form">
+                            <input type="hidden" name="file_type" value="patent">
+                            <div class="file-upload-area" id="patent-upload-area">
+                                <input type="file" id="patent-file" name="patent_file" accept=".csv,.xlsx,.xls"
+                                    class="file-input" required>
+                                <div class="upload-prompt" id="patent-prompt">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                                    <span class="prompt-text">Select patent file</span>
+                                    <small class="file-types">CSV or Excel</small>
+                                </div>
+                                <div class="file-selected" id="patent-selected" style="display: none;">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                                    <div class="file-details">
+                                        <span class="file-name" id="patent-file-name"></span>
+                                        <span class="file-size" id="patent-file-size"></span>
+                                    </div>
+                                    <button type="button" class="btn-clear" onclick="clearFile('patent')">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="downloadTemplate('patent')">
+                                    <i class="bi bi-download"></i>
+                                    Template
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="patent-submit" disabled>
+                                    <i class="bi bi-upload"></i>
+                                    Upload & Process
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trademark Section -->
+            <div class="col-lg-6">
+                <div class="upload-section">
+                    <div class="section-header">
+                        <i class="bi bi-badge-tm-fill"></i>
+                        <h3 class="section-title">Trademark Upload</h3>
+                    </div>
+
+                    <div class="section-body">
+                        <!-- Instructions -->
+                        <div class="instructions">
+                            <h5 class="instructions-title">
+                                <i class="bi bi-info-circle"></i>
+                                File Requirements
+                            </h5>
+                            <ul class="requirements-list">
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    CSV or Excel format (.csv, .xlsx)
+                                </li>
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    No headers or column names
+                                </li>
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    Trademark numbers only
+                                </li>
+                                <li class="requirement-item">
+                                    <i class="bi bi-check-circle requirement-icon"></i>
+                                    One number per row
+                                </li>
+                            </ul>
+
+                            <div class="format-example">
+                                <label class="example-label">Correct Format:</label>
+                                <div class="example-content">
+                                    <code>87456213<br>92345678<br>78451296</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Upload Form -->
+                        <!-- FIXED: Changed action from debug_upload to addcase -->
+                        <form method="POST" action="{{ url_for('docket.addcase') }}" enctype="multipart/form-data"
+                            class="upload-form" id="tm-form">
+                            <input type="hidden" name="file_type" value="trademark">
+                            <div class="file-upload-area" id="tm-upload-area">
+                                <input type="file" id="tm-file" name="tm_file" accept=".csv,.xlsx,.xls"
+                                    class="file-input" required>
+                                <div class="upload-prompt" id="tm-prompt">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i>
+                                    <span class="prompt-text">Select trademark file</span>
+                                    <small class="file-types">CSV or Excel</small>
+                                </div>
+                                <div class="file-selected" id="tm-selected" style="display: none;">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+                                    <div class="file-details">
+                                        <span class="file-name" id="tm-file-name"></span>
+                                        <span class="file-size" id="tm-file-size"></span>
+                                    </div>
+                                    <button type="button" class="btn-clear" onclick="clearFile('tm')">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    onclick="downloadTemplate('tm')">
+                                    <i class="bi bi-download"></i>
+                                    Template
+                                </button>
+                                <button type="submit" class="btn btn-primary" id="tm-submit" disabled>
+                                    <i class="bi bi-upload"></i>
+                                    Upload & Process
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div class="row justify-content-center mt-4">
+            <div class="col-lg-8">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div
+                    class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                    <i
+                        class="bi bi-{{ 'exclamation-triangle-fill' if category == 'error' else 'check-circle-fill' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .upload-container {
+        min-height: 100vh;
+        background: #f8f9fa;
+        padding: 1rem 0;
+    }
+
+    /* Progress Section Styles */
+    .stat-card {
+        padding: 15px;
+        border-radius: 8px;
+        margin: 5px;
+    }
+
+    .stat-card h5 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .current-item {
+        background-color: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+    }
+
+    .spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Header Styles */
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .header-icon {
+        font-size: 3rem;
+        color: #495057;
+        margin-bottom: 1rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 300;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #6c757d;
+        font-weight: 400;
+    }
+
+    /* Section Styles */
+    .upload-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e9ecef;
+        height: 100%;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .upload-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .section-header {
+        padding: 1rem 1rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .section-icon {
+        font-size: 1.75rem;
+        color: #495057;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 500;
+        color: #2c3e50;
+        margin: 0;
+    }
+
+    .section-body {
+        padding: 1rem;
+    }
+
+    /* Instructions Styles */
+    .instructions {
+        margin-bottom: 2rem;
+    }
+
+    .instructions-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .requirements-list {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+
+    .requirement-icon {
+        color: #28a745;
+        font-size: 0.875rem;
+    }
+
+    .format-example {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        border-left: 3px solid #007bff;
+    }
+
+    .example-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .example-content {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .example-note {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    /* File Upload Styles */
+    .file-upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        transition: all 0.3s ease;
+        background: #fafbfc;
+        margin-bottom: 1.5rem;
+    }
+
+    .file-upload-area:hover {
+        border-color: #007bff;
+        background: #f8f9ff;
+    }
+
+    .file-upload-area.dragover {
+        border-color: #007bff;
+        background: #e7f1ff;
+    }
+
+    .file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .upload-prompt {
+        color: #6c757d;
+    }
+
+    .upload-prompt i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        display: block;
+        color: #adb5bd;
+    }
+
+    .prompt-text {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .file-types {
+        color: #adb5bd;
+    }
+
+    .file-selected {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 1rem;
+    }
+
+    .file-selected i {
+        font-size: 1.5rem;
+        color: #007bff;
+    }
+
+    .file-details {
+        flex: 1;
+        margin-left: 1rem;
+        text-align: left;
+    }
+
+    .file-name {
+        display: block;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .file-size {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .btn-clear {
+        background: none;
+        border: none;
+        color: #6c757d;
+        padding: 0.5rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-clear:hover {
+        background: #f8f9fa;
+        color: #dc3545;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .form-actions .btn {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+
+    /* Alert Styles */
+    .alert {
+        border: none;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+    }
+
+    .alert-success {
+        background: #d1edff;
+        color: #0c5460;
+        border-left: 4px solid #007bff;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .upload-container {
+            padding: 0.5rem 0;
+        }
+
+        .page-title {
+            font-size: 2rem;
+        }
+
+        .section-header {
+            padding: 1.5rem 1.5rem 1rem;
+        }
+
+        .section-body {
+            padding: 1.5rem;
+        }
+
+        .file-upload-area {
+            padding: 1.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .page-header {
+            margin-bottom: 0.5rem;
+        }
+
+        .header-icon {
+            font-size: 2.5rem;
+        }
+
+        .section-header {
+            padding: 1rem 1rem 0.5rem;
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .section-body {
+            padding: 1rem;
+        }
+
+        .file-upload-area {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<script>
+    // File upload functionality
+    function setupFileUpload(type) {
+        const fileInput = document.getElementById(`${type}-file`);
+        const uploadArea = document.getElementById(`${type}-upload-area`);
+        const prompt = document.getElementById(`${type}-prompt`);
+        const selected = document.getElementById(`${type}-selected`);
+        const fileName = document.getElementById(`${type}-file-name`);
+        const fileSize = document.getElementById(`${type}-file-size`);
+        const submitBtn = document.getElementById(`${type}-submit`);
+
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                updateFileDisplay(file, fileName, fileSize);
+                showSelectedFile(prompt, selected);
+                enableSubmit(submitBtn);
+            }
+        });
+
+        // Drag and drop handlers...
+        uploadArea.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function (e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    function updateFileDisplay(file, fileNameEl, fileSizeEl) {
+        fileNameEl.textContent = file.name;
+        fileSizeEl.textContent = formatFileSize(file.size);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showSelectedFile(promptEl, selectedEl) {
+        promptEl.style.display = 'none';
+        selectedEl.style.display = 'flex';
+    }
+
+    function enableSubmit(btn) {
+        btn.disabled = false;
+    }
+
+    function clearFile(type) {
+        const fileInput = document.getElementById(`${type}-file`);
+        const prompt = document.getElementById(`${type}-prompt`);
+        const selected = document.getElementById(`${type}-selected`);
+        const submitBtn = document.getElementById(`${type}-submit`);
+
+        fileInput.value = '';
+        prompt.style.display = 'block';
+        selected.style.display = 'none';
+        submitBtn.disabled = true;
+    }
+
+    function downloadTemplate(type) {
+        let content, filename, mimeType;
+
+        if (type === 'patent') {
+            content = "18792169\nPCT/US2023/04567\n29543678";
+            filename = "patent_template.csv";
+            mimeType = "text/csv";
+        } else {
+            content = "87456213\n92345678\n78451296";
+            filename = "trademark_template.csv";
+            mimeType = "text/csv";
+        }
+
+        const blob = new Blob([content], { type: mimeType });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function showUploadForms() {
+        console.log('Showing upload forms');
+        const progressSection = document.getElementById('progress-section');
+        const uploadSections = document.getElementById('upload-sections');
+        const resultsSection = document.getElementById('results-section');
+
+        // Hide progress and results sections
+        if (progressSection) progressSection.style.display = 'none';
+        if (resultsSection) resultsSection.style.display = 'none';
+
+        // Show upload sections
+        if (uploadSections) uploadSections.style.display = 'flex';
+
+        // Clear any stored data
+        localStorage.removeItem('currentFileId');
+        localStorage.removeItem('lastCompletedJob');
+    }
+
+    function showProgressSection(isNewJob = true) {
+        console.log('Showing progress section, isNewJob:', isNewJob);
+        const progressSection = document.getElementById('progress-section');
+        const uploadSections = document.getElementById('upload-sections');
+        const resultsSection = document.getElementById('results-section');
+
+        // Show progress section
+        if (progressSection) {
+            progressSection.style.display = 'block';
+        }
+
+        // Hide upload sections
+        if (uploadSections) {
+            uploadSections.style.display = 'none';
+        }
+
+        // Hide results section initially
+        if (resultsSection) {
+            resultsSection.style.display = 'none';
+        }
+
+        // Reset progress bar only for new jobs
+        if (isNewJob) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+
+            if (progressBar) {
+                progressBar.style.width = '0%';
+                progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated';
+            }
+
+            if (progressText) {
+                progressText.textContent = '0%';
+            }
+
+            // Reset counters
+            const processedCount = document.getElementById('processed-count');
+            const successfulCount = document.getElementById('successful-count');
+            const failedCount = document.getElementById('failed-count');
+            const totalCount = document.getElementById('total-count');
+            const currentItem = document.getElementById('current-item');
+
+            if (processedCount) processedCount.textContent = '0';
+            if (successfulCount) successfulCount.textContent = '0';
+            if (failedCount) failedCount.textContent = '0';
+            if (totalCount) totalCount.textContent = '0';
+            if (currentItem) currentItem.textContent = 'Starting...';
+        }
+    }
+
+    function showResultsSection(progress) {
+        console.log('Showing results section');
+        const resultsSection = document.getElementById('results-section');
+        const resultsSummary = document.getElementById('results-summary');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        // Update progress bar to 100%
+        if (progressBar) {
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-success';
+        }
+
+        if (progressText) {
+            progressText.textContent = '100%';
+        }
+
+        // Show results section
+        if (resultsSection) {
+            resultsSection.style.display = 'block';
+        }
+
+        // Update results summary
+        if (resultsSummary && progress) {
+            const successCount = progress.successful || 0;
+            const failedCount = progress.failed || 0;
+            const totalCount = progress.total || 0;
+
+            resultsSummary.innerHTML = `
+                Successfully processed: <strong>${successCount}</strong> items<br>
+                Failed: <strong>${failedCount}</strong> items<br>
+                Total: <strong>${totalCount}</strong> items
+            `;
+        }
+
+        // Store that we've shown results for this job
+        const fileId = progress ? progress.file_id : 'unknown';
+        localStorage.setItem('lastCompletedJob', JSON.stringify({
+            fileId: fileId,
+            timestamp: Date.now(),
+            progress: progress
+        }));
+    }
+
+    function showError(message) {
+        console.error('Showing error:', message);
+        // Create and show error alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+        alertDiv.innerHTML = `
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const flashContainer = document.querySelector('.row.justify-content-center.mt-4 .col-lg-8');
+        if (flashContainer) {
+            flashContainer.appendChild(alertDiv);
+        }
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    let scrapingInterval = null;
+
+    function startProgressTracking() {
+        console.log('Starting progress tracking...');
+
+        // Stop any existing interval before starting a new one
+        if (scrapingInterval !== null) {
+            console.log('Clearing existing interval');
+            clearInterval(scrapingInterval);
+            scrapingInterval = null;
+        }
+
+        function updateProgress() {
+            console.log('Fetching progress update...');
+
+            fetch("/docket/scraping-status")
+                .then(response => {
+                    console.log('Progress response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Progress data received:', data);
+
+                    const progress = data.progress;
+                    const complete = data.complete;
+
+                    // Get the file id we care about (current run)
+                    const currentFileId = localStorage.getItem('currentFileId');
+
+                    console.log('Current file ID:', currentFileId);
+                    console.log('Progress file ID:', progress ? progress.file_id : 'No progress data');
+
+                    // If we don't have a current file ID, stop tracking
+                    if (!currentFileId) {
+                        console.log('No current file ID found, stopping tracking');
+                        if (scrapingInterval !== null) {
+                            clearInterval(scrapingInterval);
+                            scrapingInterval = null;
+                        }
+                        return;
+                    }
+
+                    // If backend is sending progress for some OTHER (old) file, ignore it
+                    if (progress && currentFileId && String(progress.file_id) !== String(currentFileId)) {
+                        console.log(
+                            `Ignoring progress for old file_id=${progress.file_id}, currentFileId=${currentFileId}`
+                        );
+                        return;
+                    }
+
+                    // Get UI elements - check if they exist
+                    const progressBar = document.getElementById('progress-bar');
+                    const progressText = document.getElementById('progress-text');
+                    const processedCount = document.getElementById('processed-count');
+                    const successfulCount = document.getElementById('successful-count');
+                    const failedCount = document.getElementById('failed-count');
+                    const totalCount = document.getElementById('total-count');
+                    const currentItem = document.getElementById('current-item');
+
+                    // If UI elements are not present, skip UI update
+                    if (!progressBar || !progressText) {
+                        console.log("⚠️ Progress UI elements not found");
+                        return;
+                    }
+
+                    if (progress && progress.total > 0) {
+                        console.log(`Progress: ${progress.processed}/${progress.total}`);
+
+                        const percent = Math.round((progress.processed / progress.total) * 100);
+
+                        // Update progress bar
+                        progressBar.style.width = percent + '%';
+                        progressText.textContent = percent + '%';
+
+                        // Update counts
+                        if (processedCount) processedCount.textContent = progress.processed;
+                        if (successfulCount) successfulCount.textContent = progress.successful;
+                        if (failedCount) failedCount.textContent = progress.failed;
+                        if (totalCount) totalCount.textContent = progress.total;
+                        if (currentItem) {
+                            currentItem.textContent = progress.current_item || 'Processing...';
+                        }
+                    }
+
+                    // Check if complete is true
+                    const isComplete = complete === true ||
+                        (progress && progress.processed >= progress.total);
+
+                    if (isComplete) {
+                        console.log("✅ COMPLETE! Stopping interval for file:", progress ? progress.file_id : null);
+
+                        // Clear the interval
+                        if (scrapingInterval !== null) {
+                            clearInterval(scrapingInterval);
+                            scrapingInterval = null;
+                        }
+
+                        // Show results
+                        showResultsSection(progress);
+
+                        // Clear current file ID from storage
+                        localStorage.removeItem('currentFileId');
+
+                        return;
+                    }
+                })
+                .catch(error => {
+                    console.log('Failed to get progress update:', error);
+
+                    // If we get repeated errors, stop the interval
+                    if (scrapingInterval !== null) {
+                        clearInterval(scrapingInterval);
+                        scrapingInterval = null;
+                        showError('Failed to get progress updates. Please refresh the page.');
+                    }
+                });
+        }
+
+        // Start the interval
+        scrapingInterval = setInterval(updateProgress, 2000);
+        // Do initial update immediately
+        updateProgress();
+    }
+
+    function checkExistingProgress() {
+        console.log('Checking existing progress...');
+
+        fetch("/docket/scraping-status")
+            .then(response => {
+                console.log('Existing progress response:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Existing progress data:', data);
+
+                // Only show progress if there's an ACTIVE job (not complete)
+                if (data && data.progress && data.complete === false) {
+                    console.log("🟡 Active job found - showing progress");
+                    const progress = data.progress;
+
+                    // Show progress section
+                    showProgressSection(false); // Don't reset progress bar
+
+                    // Store the file ID
+                    if (progress.file_id) {
+                        localStorage.setItem('currentFileId', progress.file_id);
+                        console.log("Stored existing file ID:", progress.file_id);
+                    }
+
+                    // Start tracking the existing progress
+                    startProgressTracking();
+                } else {
+                    // No active job or job is complete - show upload forms
+                    console.log("No active job found - showing upload forms");
+                    showUploadForms();
+                }
+            })
+            .catch(error => {
+                console.log('Error checking existing progress:', error);
+                // On error, default to showing upload forms
+                showUploadForms();
+            });
+    }
+
+
+    // Single form submission handler
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM Content Loaded');
+
+        setupFileUpload('tm');
+        setupFileUpload('patent');
+
+        // Patent form submission
+        document.getElementById('patent-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            console.log("Patent form submitted");
+            showProgressSection(true); // Reset for new job
+            const formData = new FormData(this);
+            submitFormData(formData, 'patent');
+        });
+
+        // Trademark form submission
+        document.getElementById('tm-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            console.log("Trademark form submitted");
+            showProgressSection(true); // Reset for new job
+            const formData = new FormData(this);
+            submitFormData(formData, 'trademark');
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Check if we should show progress on page load
+        checkExistingProgress();
+    });
+
+    // Single submitFormData function
+    function submitFormData(formData, fileType) {
+        console.log(`Submitting ${fileType} form data to /docket/add-case`);
+
+        fetch("/docket/add-case", {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(response => {
+                console.log('Response received:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    console.log(`${fileType} processing started successfully`);
+                    if (data.file_id) {
+                        localStorage.setItem('currentFileId', data.file_id);
+                        console.log(`File ID stored: ${data.file_id}`);
+                    }
+
+                    // Start tracking the new job
+                    startProgressTracking();
+                } else {
+                    console.error('Upload failed:', data.error);
+                    showError(data.error || 'An error occurred during upload');
+                    showUploadForms();
+                }
+            })
+            .catch(error => {
+                console.error('Network error:', error);
+                showError('Network error occurred. Please try again.');
+                showUploadForms();
+            });
+    }
+</script>
+{% endblock %}

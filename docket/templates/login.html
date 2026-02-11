@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocketTron - Authentication</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 20px;
+            position: relative;
+        }
+
+        .auth-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            z-index: 1;
+        }
+
+        .auth-background::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0.9) 100%);
+        }
+
+        .auth-form-container {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 450px;
+            margin-right: 10%;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .auth-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .auth-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .auth-header h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.8rem;
+        }
+
+        .auth-body {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .auth-switch a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .auth-switch a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .form-hidden {
+            display: none;
+        }
+
+        .password-strength {
+            height: 5px;
+            border-radius: 5px;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak {
+            background-color: #e74c3c;
+            width: 25%;
+        }
+
+        .strength-medium {
+            background-color: #f39c12;
+            width: 50%;
+        }
+
+        .strength-strong {
+            background-color: #2ecc71;
+            width: 100%;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .auth-container {
+                justify-content: center;
+            }
+            
+            .auth-form-container {
+                margin-right: 0;
+            }
+            
+            .auth-background::after {
+                background: linear-gradient(90deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .auth-body {
+                padding: 30px 20px;
+            }
+            
+            .auth-header {
+                padding: 20px;
+            }
+            
+            .auth-header h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-background"></div>
+        
+        <div class="auth-form-container">
+            <div class="auth-card">
+                <!-- Login Form -->
+                <div id="login-form">
+                    <div class="auth-header">
+                        <h2><i class="bi bi-briefcase"></i> DocketTron Login</h2>
+                    </div>
+                    <div class="auth-body">
+                        <!-- Flash messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endwith %}
+
+                        <form method="POST" action="{{ url_for('docket.login') }}">
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Password</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
+                            <div class="form-group form-check">
+                                <input type="checkbox" name="remember_me" class="form-check-input">
+                                <label class="form-check-label">Remember me</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Login</button>
+                        </form>
+                        
+                        <div class="auth-switch">
+                            <a href="#" id="show-change-password">Change Password</a>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Demo: admin@docketron.com / admin123</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Change Password Form -->
+                <div id="change-password-form" class="form-hidden">
+                    <div class="auth-header">
+                        <h2><i class="bi bi-shield-lock"></i> Change Password</h2>
+                    </div>
+                    <div class="auth-body">
+                        <!-- Flash messages for password change -->
+                        <div id="password-change-messages">
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% for category, message in messages %}
+                                    {% if 'password' in category %}
+                                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+
+                        <form method="POST" action="">
+                                                        <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" name="email" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" name="current_password" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">New Password</label>
+                                <input type="password" name="new_password" id="newPassword" class="form-control" required>
+                                <div class="password-strength" id="passwordStrength"></div>
+                                <small class="form-text text-muted">Password must be at least 8 characters with uppercase, lowercase, and numbers.</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Confirm New Password</label>
+                                <input type="password" name="confirm_password" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Update Password</button>
+                        </form>
+                        
+                        <div class="auth-switch">
+                            <a href="#" id="show-login">Back to Login</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const changePasswordForm = document.getElementById('change-password-form');
+            const showChangePassword = document.getElementById('show-change-password');
+            const showLogin = document.getElementById('show-login');
+            const newPassword = document.getElementById('newPassword');
+            const passwordStrength = document.getElementById('passwordStrength');
+
+            // Switch to change password form
+            showChangePassword.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginForm.classList.add('form-hidden');
+                changePasswordForm.classList.remove('form-hidden');
+                // Clear any existing messages when switching forms
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    alert.classList.add('d-none');
+                });
+            });
+
+            // Switch to login form
+            showLogin.addEventListener('click', function(e) {
+                e.preventDefault();
+                changePasswordForm.classList.add('form-hidden');
+                loginForm.classList.remove('form-hidden');
+                // Clear any existing messages when switching forms
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    alert.classList.add('d-none');
+                });
+            });
+
+            // Password strength indicator
+            if (newPassword) {
+                newPassword.addEventListener('input', function() {
+                    const password = this.value;
+                    let strength = 0;
+                    
+                    if (password.length >= 8) strength++;
+                    if (/[a-z]/.test(password)) strength++;
+                    if (/[A-Z]/.test(password)) strength++;
+                    if (/[0-9]/.test(password)) strength++;
+                    if (/[^a-zA-Z0-9]/.test(password)) strength++;
+                    
+                    // Reset classes
+                    passwordStrength.className = 'password-strength';
+                    
+                    if (password.length === 0) {
+                        passwordStrength.style.width = '0';
+                    } else if (strength <= 2) {
+                        passwordStrength.classList.add('strength-weak');
+                    } else if (strength <= 4) {
+                        passwordStrength.classList.add('strength-medium');
+                    } else {
+                        passwordStrength.classList.add('strength-strong');
+                    }
+                });
+            }
+
+            // Auto-hide alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
