@@ -1,0 +1,68 @@
+
+{% extends "Camp/admin-layout.html" %}
+{% block body %}
+
+    <!-- Edit Blogs  -->
+
+
+    <div class="container mt-5 pt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="text-primary mb-0">Edit Blogs</h3>
+        </div>
+
+        <hr class="mt-4 mb-4">
+        <!-- Actions -->
+        
+            <!-- Campaign Buttons -->
+
+            <button class="btn btn-primary" onclick="openEditor()">Template</button>
+
+
+
+            <!-- CKEditor Modal -->
+            <!-- CKEditor Modal -->
+            <div id="editorModal" style="display:none;" class="p-4 border rounded shadow">
+                <div class=" mb-4 modal-header">
+                    <h5 class="modal-title" id="editorModalLabel">Edit Email Template</h5>
+
+
+                    <button class="btn btn-secondary" onclick="closeEditor()">Close</button>
+                </div>
+                <Hr>
+            
+                <textarea id="emailEditor"></textarea>
+
+            </div>
+        </div>
+
+
+
+
+
+
+    <script>
+
+
+
+
+        // Function for modal full functions
+        function openEditor() {
+            document.getElementById('editorModal').style.display = 'block';
+            CKEDITOR.replace('emailEditor', {
+                allowedContent: true
+            });
+        }
+
+
+
+        // Function for closing modal
+
+        function closeEditor() {
+            document.getElementById('editorModal').style.display = 'none';
+            CKEDITOR.instances.emailEditor.destroy();
+        }
+
+
+</Script>
+
+{% endblock %}

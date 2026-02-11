@@ -1,0 +1,347 @@
+{% extends "Camp/admin-layout.html" %}
+{% block body %}
+
+<style>
+    .editor-wrapper {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .media-preview-container {
+        border: 2px dashed #e9ecef;
+        border-radius: 8px;
+        transition: border-color 0.3s ease;
+    }
+
+    .media-preview-container:hover {
+        border-color: #0d6efd;
+    }
+
+    .tag-input {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+    }
+
+    .tag {
+        background: #f8f9fa;
+        padding: 4px 12px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .editor-toolbar {
+        border-bottom: 1px solid #dee2e6;
+        padding: 12px;
+        background: #f8f9fa;
+    }
+
+    .editor-content {
+        min-height: 400px;
+        padding: 16px;
+        outline: none;
+    }
+
+    .custom-datepicker {
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' class='bi bi-calendar' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM2 2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2z'/%3E%3Cpath d='M2.5 4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H3a.5.5 0 0 1-.5-.5V4z'/%3E%3C/svg%3E") no-repeat right 12px center/20px auto;
+    }
+
+
+    .ck-editor__editable {
+        min-height: 400px;
+    }
+
+    .editor-wrapper {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+</style>
+
+
+
+<div class="container py-5">
+    <div class="editor-wrapper">
+        <!-- Header Section -->
+        <div class="border-bottom p-4 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 fw-semibold mb-0">
+                        {% if blog %}
+                        Edit Blog Post: {{ blog.title }} {{ blog.srno }}
+                        {% else %}
+                        Create New Blog Post
+                        {% endif %}
+                    </h2>
+                    <p class="text-muted mb-0">Complete all required fields (*)</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('main.Editblogs') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="px-4 pt-4">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center">
+                <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>
+                <div>{{ message }}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+
+
+
+        <!-- Main Form -->
+        <form method="POST" action="{{ url_for('main.update_blog', srno=blog.srno) if blog else url_for('main.add_blog') }}" enctype="multipart/form-data" class="p-4">
+            <div class="row g-4">
+                <!-- Left Column (Meta & Media) -->
+                <div class="col-lg-4">
+                    <!-- Featured Image -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Featured Image</label>
+                        <div class="media-preview-container p-3 text-center">
+                            {% if blog and blog.image %}
+                            <img src="{{ blog.image }}" class="img-fluid rounded mb-3" id="featuredPreview">
+                            {% else %}
+                            <img src="#" class="img-fluid rounded mb-3 d-none" id="featuredPreview" />
+                            <div class="py-5 text-muted" id="noImageText">
+                                <i class="bi bi-image fs-1"></i>
+                                <p class="mt-2 mb-0">No image selected</p>
+                            </div>
+                            {% endif %}
+                            <input type="file" class="d-none" id="bgimageInput" name="bgimage" accept="image/*">
+                            <button type="button" class="btn btn-sm btn-primary"
+                                onclick="document.getElementById('bgimageInput').click()">
+                                <i class="bi bi-upload me-2"></i>Upload Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Meta Information -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="h6 fw-medium mb-3">Post Author Details and meta</h3>
+
+                            <!-- Author Section -->
+                            <div class="mb-4">
+
+                                <div class=" align-items-center gap-3">
+                                    <div class="position-relative mb-5">
+                                        <img id="authorPreview"
+                                            src="{{ blog.author_img if blog else url_for('static', filename='default-avatar.png') }}"
+                                            class="rounded-circle"
+                                            style="width: 250px; height: 300px; object-fit: cover;">
+
+                                        <input type="file" class="d-none" id="authorImage" name="author_img">
+                                        <button type="button"
+                                            class="btn btn-sm btn-icon btn-light position-absolute bottom-0 end-0"
+                                            onclick="document.getElementById('authorImage').click()">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                    <label class="form-label fw-medium">Author Name</label>
+                                    <input type="text" class="form-control" name="author"
+                                        value="{{ blog.author if blog }}" required>
+                                </div>
+                            </div>
+
+                            <!-- Category & Date -->
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Category</label>
+                                <select class="form-select" name="category" required>
+                                    <option value="">Select Category</option>
+                                    {% for cat in ['Patents', 'Trademark', 'IP Strategy', 'Design Patents','Patent
+                                    Filing', 'Office Action Responses', 'Software ', 'Biotech & Pharma
+                                    Patents','Telecom', 'IoT & Smart Devices ', 'Semiconductors & Hardware','Green
+                                    Technology & CleanTech IP','Automotive Innovations','Robotics &
+                                    Mechatronics','Manufacturing Process'] %}
+                                    <option value="{{ cat }}" {{ 'selected' if blog and blog.category==cat }}>
+                                        {{ cat }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Publish Date</label>
+                                <input type="date" class="form-control custom-datepicker" name="date"
+                                    value="{{ blog.date if blog else '' }}" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column (Content) -->
+                <div class="col-lg-8">
+                    <!-- Title -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Post Title</label>
+                        <input type="text" class="form-control form-control-lg" name="title"
+                            value="{{ blog.title if blog }}" required>
+                    </div>
+
+                    <!-- Content Editor -->
+                    <div class="mb-4">
+                        <label class="form-label fw-medium">Post Content</label>
+                        <div class="editor-wrapper">
+                            <textarea id="BlogEditor" class="form-control"
+                                name="content">{{ blog.content if blog }}</textarea>
+                        </div>
+                    </div>
+
+
+
+                    <!-- SEO & Settings -->
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h3 class="h6 fw-medium mb-3">Advanced Settings</h3>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-medium">Permalink</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">https://www.engineerip.com/</span>
+                                    <input type="text" class="form-control" name="link"
+                                        value="{{ blog.link.split('/')[-1] if blog else '' }}">
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="form-label fw-medium">Meta Tags</label>
+                                <div class="border rounded">
+                                    <textarea class="editor-content form-control" name="meta"
+                                        rows="7">{{ blog.meta if blog else '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-flex justify-content-end gap-3 mt-4 pt-4 border-top">
+                        {% if blog %}
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                            data-bs-target="#deleteModal">
+                            <i class="bi bi-trash me-2"></i>Delete Post
+                        </button>
+                        {% endif %}
+                        <button type="submit"  name="action" value="update" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-2"></i>
+                            {{ 'Update Post' if blog else 'Publish Now' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if blog %}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to permanently delete this post?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+
+                <form action="{{ url_for('main.update_blog', srno=blog.srno) }}" method="POST">
+                    <button type="submit" class="btn btn-danger" value="delete" name="action">Delete
+                        Permanently</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    // Image Preview Functionality
+
+    // Preview function for Featured Image
+
+    document.getElementById('bgimageInput').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('featuredPreview');
+                preview.src = e.target.result;
+                preview.classList.remove('d-none');
+
+                // Hide "No image selected" message if it exists
+                const noImageText = document.getElementById('noImageText');
+                if (noImageText) {
+                    noImageText.style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+
+
+    // Preview function for Author Image
+    document.getElementById('authorImage').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const preview = document.getElementById('authorPreview');
+                if (preview) {
+                    preview.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+
+
+    // Initialize CKEditor
+    CKEDITOR.replace('BlogEditor', {
+        allowedContent: true,
+        removeButtons: 'About',
+        height: 400,
+        toolbarGroups: [
+            { name: 'document', groups: ['mode', 'document', 'doctools'] },
+            { name: 'clipboard', groups: ['clipboard', 'undo'] },
+            { name: 'editing', groups: ['find', 'selection', 'spellchecker'] },
+            { name: 'basicstyles', groups: ['basicstyles', 'cleanup'] },
+            { name: 'paragraph', groups: ['list', 'indent', 'blocks', 'align'] },
+            { name: 'links' },
+            { name: 'insert' },
+            { name: 'styles' },
+            { name: 'colors' },
+            { name: 'tools' },
+            { name: 'others' }
+        ]
+    });
+
+</script>
+
+
+
+
+
+{% endblock %}

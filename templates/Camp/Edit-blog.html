@@ -1,0 +1,135 @@
+{% extends "Camp/admin-layout.html" %}
+{% block body %}
+
+
+
+
+
+<Style>
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .card-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+</Style>
+
+
+<!-- Edit-Testomony  -->
+
+
+
+<!-- meta
+srno
+title
+image
+category
+author
+author_img
+content
+link
+date -->
+
+
+
+
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary mb-0">Edit Blogs</h3>
+
+        <!-- Right-aligned Add Button -->
+        <a href="/Add-Blog" class="btn btn-success">
+            + Add New Blog
+        </a>
+    </div>
+
+
+    <hr class="mt-4 mb-4">
+    <!-- Actions -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+
+
+    <div>
+
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 py-4">
+            {% for blog in blog %}
+            <div class="col">
+                <article class="card h-100 shadow-lg border-0 overflow-hidden">
+                    <!-- Edit Button -->
+                    <a href="Edit-Blog/{{blog.srno}}" style="font-size: x-large;" class="btn btn-sm btn-light position-absolute end-0 m-3 z-2">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+
+                    <!-- Featured Image -->
+                    <img src="{{ blog.image }}" class="card-img-top" alt="{{ blog.title }}"
+                        style="height: 200px; object-fit: cover;">
+
+                    <div class="card-body">
+                        <!-- Category Badge -->
+                        <div class="mb-2">
+                            <span class="badge bg-primary-subtle text-primary">{{ blog.category }}</span>
+                        </div>
+
+                        <!-- Title -->
+                        <h2 class="h5 card-title">
+                            <a href="{{ blog.link }}" class="text-dark text-decoration-none">{{ blog.title
+                                }}</a>
+                        </h2>
+
+                        <!-- Author & Date -->
+                        <div class="d-flex align-items-center gap-2 my-3">
+                            <img src="{{ blog.author_img }}" alt="{{ blog.author }}" class="rounded-circle"
+                                style="width: 40px; height: 40px; object-fit: cover;">
+                            <div>
+                                <div class="fw-medium">{{ blog.author }}</div>
+                                <small class="text-muted">{{ blog.date }}</small>
+                            </div>
+                        </div>
+
+                        <!-- Content Excerpt -->
+                        <p class="card-text text-secondary">{{ blog.content | truncate(120) }}</p>
+                    </div>
+
+                    <!-- Read More Link -->
+                    <div class="card-footer bg-transparent border-0 position-relative">
+                        <a href="{{ blog.link }}" class="btn btn-link text-decoration-none px-0">
+                            Read More <i class="bi bi-arrow-right-short"></i>
+                        </a>
+                        <a href="Edit-Blog/{{ blog.srno }}"
+                            class="btn btn-sm position-absolute end-0 me-3">
+                            <i class="bi bi-pencil-square text-dark" style="font-size: x-large;"></i>
+                        </a>
+                    </div>
+
+                </article>
+            </div>
+            {% endfor %}
+        </div>
+
+
+
+
+
+
+
+
+
+
+        {% endblock %}

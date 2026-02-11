@@ -1,0 +1,273 @@
+{% extends "Camp/admin-layout.html" %}
+{% block body %}
+
+
+
+<style>
+    .star-rating {
+        direction: rtl;
+        display: inline-flex;
+        gap: 5px;
+        font-size: 2.5rem;
+        user-select: none;
+    }
+
+    .star-rating input[type="radio"] {
+        display: none;
+    }
+
+    .star-rating label {
+        color: #ccc;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .star-rating input[type="radio"]:checked~label,
+    .star-rating label:hover,
+    .star-rating label:hover~label {
+        color: #ffc107;
+        /* Bootstrap warning color */
+    }
+</style>
+
+
+
+
+
+<!-- Edit-Testomony  -->
+
+
+
+{% if not testimonies %}
+
+
+
+<div class="container mt-5 pt-5 needs-validation">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary mb-0">Add a New Testimony</h3>
+    </div>
+
+    <hr class="mt-4 mb-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container mt-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+
+    <form action="{{ url_for('main.add_testimony') }}" method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <!-- Left Column -->
+
+            <div class="col-md-4 text-center">
+                <label class="form-label">Add Image</label>
+                <div class="mb-3">
+                    <img src="https://plus.unsplash.com/premium_vector-1731922571886-37d0c34f894f?q=80&w=2360&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                        alt="Current Image" class="img-thumbnail" style="max-height: 180px;">
+                </div>
+
+                <div class="mb-3">
+                    <label for="image_upload" class="form-label">Upload Image</label>
+                    <input class="form-control" type="file" id="image" name="image" accept="image/png, image/jpeg">
+                </div>
+
+                <Hr>
+                </Hr>
+                <div class="mb-5">
+                    <label for="video" class="form-label">Upload Video For HOME</label>
+                    <input class="form-control" type="file" id="video" name="video" accept="video/mp4">
+                </div>
+            </div>
+
+
+
+
+
+
+
+            <!-- Right Column-->
+
+            <div class="col-md-8">
+
+
+                <!-- Full Name -->
+                <div class="mb-3">
+                    <label for="name" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+
+                <!-- Designation -->
+                <div class="mb-3">
+                    <label for="designation" class="form-label">Designation</label>
+                    <input type="text" class="form-control" id="designaiton" name="designaiton" required>
+                </div>
+
+                <!-- Star Rating -->
+
+                <div class="mb-3">
+                    <label class="form-label d-block">Star Rating</label>
+                    <div class="star-rating">
+                        {% for i in range(5, 0, -1) %}
+                        <input type="radio" id="star{{ i }}" name="stars" value="{{ i }}">
+                        <label for="star{{ i }}" title="{{ i }} stars">★</label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+
+                <!-- Content -->
+                <div class="mb-3">
+                    <label for="content" class="form-label">Testimony Content</label>
+                    <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                </div>
+
+                <!-- Submit -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Add This</button>
+                </div>
+            </div>
+
+
+
+
+
+
+            {% else %}
+
+
+
+            <div class="container mt-5 pt-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="text-primary mb-0">Edit Testimony #{{ testimonies.srno }} - {{ testimonies.name }}
+                    </h3>
+                </div>
+
+                <hr class="mt-4 mb-4">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="container mt-3">
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('main.update_testimony', testimony_id=testimonies.srno) }}" method="POST"
+                    enctype="multipart/form-data">
+                    <div class="row">
+                        <!-- Left Column -->
+
+                        <div class="col-md-4 text-center">
+                            <label class="form-label">Current Image</label>
+                            <div class="mb-3">
+                                <img src="/{{ testimonies.image }}" alt="Current Image" class="img-thumbnail"
+                                    style="max-height: 180px;">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="image_upload" class="form-label">Upload New Image</label>
+                                <input class="form-control" type="file" id="image" name="image"
+                                    accept="image/png, image/jpeg">
+                            </div>
+
+                            <Hr>
+                            </Hr>
+                            <div class="mb-5">
+                                <label for="video" class="form-label">Upload Video For HOME</label>
+                                <input class="form-control" type="file" id="video" name="video" accept="video/mp4">
+                            </div>
+                        </div>
+
+
+
+
+
+
+
+                        <!-- Right Column-->
+
+                        <div class="col-md-8">
+                            <h4 class="mb-4">Edit Testimony</h4>
+
+                            <!-- Full Name -->
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    value="{{ testimonies.name }}" required>
+                            </div>
+
+                            <!-- Designation -->
+                            <div class="mb-3">
+                                <label for="designation" class="form-label">Designation</label>
+                                <input type="text" class="form-control" id="designaiton" name="designaiton"
+                                    value="{{ testimonies.designaiton }}" required>
+                            </div>
+
+                            <!-- Star Rating -->
+
+                            <div class="mb-3">
+                                <label class="form-label d-block">Star Rating</label>
+                                <div class="star-rating">
+                                    {% for i in range(5, 0, -1) %}
+                                    <input type="radio" id="star{{ i }}" name="stars" value="{{ i }}" {% if
+                                        testimonies.stars==i %}checked{% endif %}>
+                                    <label for="star{{ i }}" title="{{ i }} stars">★</label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+
+                            <!-- Content -->
+                            <div class="mb-3">
+                                <label for="content" class="form-label">Testimony Content</label>
+                                <textarea class="form-control" id="content" name="content" rows="5"
+                                    required>{{ testimonies.content }}</textarea>
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="mt-4 d-flex justify-content-between">
+                                <button type="submit" name="action" class="btn btn-primary" value="update">Update
+                                    Testimony</button>
+                                <button type="submit" name="action" class="btn btn-danger"
+                                    value="delete">Delete</button>
+                            </div>
+                        </div>
+
+
+
+
+
+
+
+
+
+                    </div>
+                </form>
+
+
+
+                {% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+                {% endblock %}

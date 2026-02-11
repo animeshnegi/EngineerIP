@@ -1,0 +1,370 @@
+{% extends "layout.html" %}
+{% block body %}
+<main class="main">
+
+    <!-- Page Title -->
+    <div class="page-title"
+        style="background-image: url({{blog.image}});background-size: cover; background-position: center;">
+        <div class="container position-relative">
+            <h1></h1>
+            <p></p>
+
+        </div>
+    </div>
+
+    <section id="blog-detail" class="blog-detail section bg-light" style="padding: 15px;">
+        <div class="container">
+            <h1 class="fw-bold text-dark mb-3">{{ blog.title }}</h1>
+        </div>
+    </section>
+
+    <section id="blog-detail" class="blog-detail section bg-light" style="padding: 15px;">
+        <div class="container">
+            <div class="row">
+                <!-- Blog Content -->
+                <div class="col-lg-8">
+                    <article data-aos="fade-up">
+
+
+
+                        <div class="post-content">
+                            {{ blog.content | safe }}
+                        </div>
+
+
+                        <hr>
+
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ blog.author_img }}" class="img-fluid rounded-circle me-3" width="50">
+                                <div class="post-meta">
+                                    <p class="mb-0 fw-semibold">{{ blog.author }}</p>
+                                    <small class="text-muted">
+                                        <time datetime="{{ blog.date }}">{{ blog.date.strftime('%b %d, %Y') }}</time>
+                                    </small>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary">{{ blog.category }}</span>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+
+                <!-- Sticky Sidebar -->
+                <div class="col-lg-4">
+                    <div class="position-sticky" style="top: 100px;">
+                        <!-- Search Box -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <form action="/search" method="GET">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="q" placeholder="Search posts..."
+                                            required>
+                                        <button class="btn btn-primary" type="submit"><i
+                                                class="bi bi-search"></i></button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4 p-3" data-aos="fade-up" data-aos-delay="100">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4 text-center text-primary">Our Services</h5>
+                                <hr>
+                                <div class="list-group">
+
+                                    <a href="/Patent-Services"
+                                        class="list-group-item list-group-item-action border-0 mb-2 shadow-sm"
+                                        data-aos="fade-right" data-aos-delay="200">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-lightbulb text-warning fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">Patent Services</h6>
+                                                <small class="text-muted">Protect your inventions with professional
+                                                    patent drafting and filing.</small>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    <a href="/Trademark-Services"
+                                        class="list-group-item list-group-item-action border-0 mb-2 shadow-sm"
+                                        data-aos="fade-right" data-aos-delay="300">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-patch-check text-success fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">Trademark Services</h6>
+                                                <small class="text-muted">Secure your brand identity with trademark
+                                                    registration and defense.</small>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    <a href="/Patent-Drawings"
+                                        class="list-group-item list-group-item-action border-0 mb-2 shadow-sm"
+                                        data-aos="fade-right" data-aos-delay="400">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-brush text-info fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">Drawings & Illustrations</h6>
+                                                <small class="text-muted">Professional technical drawings for patent and
+                                                    design submissions.</small>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    <!-- <a href="/Legal-Consultants"
+                                        class="list-group-item list-group-item-action border-0 shadow-sm"
+                                        data-aos="fade-right" data-aos-delay="500">
+                                        <div class="d-flex align-items-start">
+                                            <i class="bi bi-gavel text-danger fs-4 me-3"></i>
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">Legal Consulting</h6>
+                                                <small class="text-muted">Get expert IP legal advice from industry
+                                                    professionals.</small>
+                                            </div>
+                                        </div>
+                                    </a> -->
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Tags</h5>
+                                <div>
+                                    <a href="#" class="badge bg-secondary text-white m-1">Patent</a>
+                                    <a href="#" class="badge bg-secondary text-white m-1">Trademark</a>
+                                    <a href="#" class="badge bg-secondary text-white m-1">IP Strategy</a>
+                                    <a href="#" class="badge bg-secondary text-white m-1">Startups</a>
+                                    <a href="#" class="badge bg-secondary text-white m-1">Inventions</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+
+
+
+
+            </div>
+        </div>
+
+
+
+
+
+
+    </section><!-- /Recent Posts Section -->
+
+
+    <section id="blog-detail" class="blog-detail section bg-light" style="padding: 15px;">
+
+        <div class="container">
+            <hr class="my-5">
+
+            <!-- Comment Section -->
+            <div class="comments-section mt-5">
+                <h4 class="mb-4">Leave a Comment</h4>
+
+                <!-- Comment Form -->
+                <form method="POST" action="/submit-comment" class="mb-5">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" name="name" placeholder="Your Name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="email" class="form-control" name="email" placeholder="Your Email" required>
+                        </div>
+                        <div class="col-12">
+                            <textarea class="form-control" name="comment" rows="5" placeholder="Your Comment"
+                                required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button class="btn btn-primary" type="submit">Post Comment</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Existing Comments -->
+                <div class="comment-list">
+                    <h5 class="mb-3">3 Comments</h5>
+
+                    <!-- Example Comment Item -->
+                    {% for c in comments %}
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <img src="{{ c.avatar_url or '/static/img/default-avatar.png' }}" alt="avatar"
+                                class="rounded-circle" width="50">
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-1">{{ c.name }}</h6>
+                            <small class="text-muted">{{ c.date.strftime('%b %d, %Y') }}</small>
+                            <p class="mt-2">{{ c.comment }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+
+            </div>
+
+            <Hr style="margin-top: 70px;">
+
+        </div>
+
+
+    </section>
+
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact section bg-light">
+
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+
+            <h2>Contact</h2>
+            <p>Contact Us</p>
+        </div><!-- End Section Title -->
+
+        <div class="container" data-aos="fade" data-aos-delay="100">
+
+            <div class="row gy-4">
+
+                <div class="col-lg-4">
+                    <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="200">
+                        <i class="bi bi-geo-alt flex-shrink-0"></i>
+                        <div>
+                            <h3>Address</h3>
+                            <p>1207 Delaware Ave #759<br>
+                                Wilmington DE 19806</p>
+                        </div>
+                    </div>
+
+                    <a href="tel:+1-302-302-1650" class="info-item d-flex" data-aos="fade-up" data-aos-delay="300"
+                        style="text-decoration: none; color: inherit;">
+                        <i class="bi bi-telephone flex-shrink-0"></i>
+                        <div>
+                            <h3>Call Us</h3>
+                            <p>+1-302-302-1650</p>
+                        </div>
+                    </a>
+
+                    <a href="mailto:mail@engineerip.com" class="info-item d-flex" data-aos="fade-up"
+                        data-aos-delay="400" style="text-decoration: none; color: inherit;">
+                        <i class="bi bi-envelope flex-shrink-0"></i>
+                        <div>
+                            <h3>Email Us</h3>
+                            <p>mail@engineerip.com</p>
+                        </div>
+                    </a>
+
+
+                </div>
+
+                <div class="col-lg-8">
+                    <form action="/query" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
+                        <div class="row gy-4">
+
+                            <div class="col-md-6">
+                                <input type="text" name="name" id="name" class="form-control" placeholder="Your Name"
+                                    required="">
+                            </div>
+
+                            <div class="col-md-6 ">
+                                <input type="email" class="form-control" name="email" id="email"
+                                    placeholder="Your Email" required="">
+                            </div>
+
+                            <div class="col-md-12">
+                                <input type="text" class="form-control" name="subject" id="subject"
+                                    placeholder="Subject" required="">
+                            </div>
+
+                            <div class="col-md-12">
+                                <textarea class="form-control" name="message" id="message" rows="6"
+                                    placeholder="Message" required=""></textarea>
+                            </div>
+
+              <div class="row align-items-center">
+                <!-- Left side: reCAPTCHA -->
+                <div class="col-lg-6">
+                  <div class="g-recaptcha" data-sitekey="6LeAtKMrAAAAAJ_ceR-60Ap1WX4H_wwTpwr78xOW"
+                    data-callback="enableSubmit"></div>
+                </div>
+
+                <!-- Right side: Button -->
+                <div class="col-lg-6 text-end">
+                  <div class="loading">Loading</div>
+                  <div class="error-message"></div>
+                  <div class="sent-message"></div>
+                  <button class="end btn btn-primary" type="submit" id="submitBtn" type="submit" disabled>Send
+                    Message</button>
+                </div>
+              </div>
+
+              <style>
+                .g-recaptcha {
+                  transform: scale(0.85);
+                  /* Shrink slightly */
+                  transform-origin: 0 0;
+                  /* Keep aligned to top-left */
+                }
+              </style>
+              <script>
+                function enableSubmit() {
+                  document.getElementById("submitBtn").disabled = false;
+                }
+
+              </script>
+
+                        </div>
+                    </form>
+                </div><!-- End Contact Form -->
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- /Contact Section -->
+
+</main>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script>
+    AOS.init();
+</script>
+
+
+{% endblock %}

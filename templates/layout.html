@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>EngineerIP</title>
+  <meta name="description" content="">
+  <meta name="keywords" content="">
+
+  <!-- Favicons -->
+  <link href="static/img/icon.png" sizes="32x32" rel="icon">
+
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="static/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="static/vendor/aos/aos.css" rel="stylesheet">
+  <link href="static/vendor/animate.css/animate.min.css" rel="stylesheet">
+  <link href="static/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="static/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="static/css/main.css" rel="stylesheet">
+  <style>
+
+  </style>
+
+
+</head>
+
+
+
+
+
+<body class="index-page">
+
+  <header id="header" class="header fixed-top">
+
+
+    <!-- First Row: Contact Information -->
+    <div class="header-top d-flex justify-content-end align-items-center">
+      <div class="contact-info">
+        <span><i class="bi bi-envelope flex-shrink-0"></i><a href="mailto:mail@engeerip.com"> mail@engineerip.com
+            &nbsp;&nbsp;&nbsp;</a></span>
+        <!-- <span><i class="bi bi-telephone flex-shrink-0"></i><a href="tel:+1234567890"> + 123-456-7890</a></span> -->
+      </div>
+      <div class="address-info" style="margin-right: 4em;">
+        <span> <i class="bi bi-geo-alt flex-shrink-0"></i> 1207 Delaware Ave #759, Wilmington DE 19806</span>
+      </div>
+    </div>
+
+
+    <div class="container-fluid container-xl">
+      <!-- Second Row: Logo and Navigation -->
+      <div class="header-bottom d-flex justify-content-between align-items-center">
+        <a href="/" class="logo d-flex align-items-center">
+          <h1 style="font-family: myFirstFont;">Engineer<span style="color: #ef6603; font-size: xxx-large;">IP</span>
+          </h1>
+        </a>
+
+
+        <nav id="navmenu" class="navmenu">
+
+          <ul>
+
+            <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Home</a></li>
+
+            <li class="dropdown"><a class="{% if request.path == '/Patent-Services' %}active{% endif %}" href="/Patent-Services"><span>Patent Services</span> <i
+                  class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <ul>
+                <li class="dropdown"><a href="#"><span>Prior Art Searches</span> <i
+                      class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="Patentability-Search">Patentability/Novelty Search</a></li>
+                    <li><a href="FTO-Freedom-To-Operate">FTO (Freedom To Operate)</a></li>
+                    <li><a href="Infringement-Search">Infringement Search</a></li>
+                    <li><a href="Non-Patent-Literature-NPL-Search">Non- Patent Literature (NPL) Search</a></li>
+                    <li><a href="Design-Patent-Search">Design Patent Search</a></li>
+                    <li><a href="Knock-Out-Search">Knock Out Search</a></li>
+                    <li><a href="State-Of-Art-Search">State Of Art Search</a></li>
+                    <li><a href="Chemical-Structure-Searches">Chemical Structure Searches</a></li>
+                    <li><a href="Market-Research">Market Research</a></li>
+                  </ul>
+                </li>
+
+
+
+                <li class="dropdown"><a href="#"><span>Patent Litigation Support</span> <i
+                      class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="Office-Action-Response-Drafting">Office Action Response Drafting</a></li>
+                    <li><a href="Invalidation-Validation-Search">Invalidation/Validation Search</a></li>
+                    <li><a href="Infringement-Non-Infringement-Analysis">Infringement/Non-Infringement Analysis</a></li>
+                    <li><a href="Evidence-Of-Use-Claim-Charts">Evidence Of Use / Claim Charts</a></li>
+                    <li><a href="Pre-Grant-And-Post-Grant-Opposition">Pre Grant And Post Grant Opposition</a></li>
+                  </ul>
+                </li>
+
+
+                <li class="dropdown"><a href="#"><span>Patent Technology Analytics Support</span> <i
+                      class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="Landscape-Analysis">Landscape Analysis</a></li>
+                    <li><a href="Patent-Portfolio-Analysis">Patent Portfolio Analysis</a></li>
+                    <li><a href="Patent-Valuation">Patent Valuation</a></li>
+                    <li><a href="White-space-Analysis">White-space Analysis</a></li>
+                    <li><a href="Technology-Scouting">Technology Scouting</a></li>
+                  </ul>
+                </li>
+
+                <li class="dropdown"><a href="#"><span>Patent Prosecution Support</span> <i
+                      class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="Patent-Drawings">Patent Drawings & Illustrations</a></li>
+                    <li><a href="Patent-Drafting">Patent Drafting (Provisional & Non-Provisional)</a></li>
+                    <li><a href="Patent-Filing">Patent Filing</a></li>
+                  </ul>
+                </li>
+
+
+                <li class="dropdown"><a href="#"><span>Patent Paralegal Support</span> <i
+                      class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="Docketing-Support">Docketing Support Services</a></li>
+                    <li><a href="IDS-Preparation">IDS Preparation</a></li>
+                    <li><a href="PCT-Filing">PCT Filing</a></li>
+                    <li><a href="Patent-Proof-Reading">Patent Proof Reading</a></li>
+                    <li><a href="Patent-Application-Preparation">Patent Application Form Preparation</a></li>
+                  </ul>
+                </li>
+
+
+
+                <li class="dropdown"><a href="#"><span>Monetization & Acquisition</span> <i
+                      class="bi bi-chevron-down toggle-dropdown"></i></a>
+                  <ul>
+                    <li><a href="Patent-Licensing">Patent Licensing</a></li>
+                    <li><a href="Detailed-Claim-Charts">Detailed Claim Charts</a></li>
+                    <li><a href="Due-Diligence">Due Diligence</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+
+
+            <li class="dropdown"><a href="/Trademark-Services" class="{% if request.path == '/Trademark-Services' %}active{% endif %}"><span>Trademark Services</span> <i
+                  class="bi bi-chevron-down toggle-dropdown"></i></a>
+              <ul>
+                <li><a href="Trademark-Office-Action-Response"><span>TM Office Action Response</span></a></li>
+                <li><a href="Trademark-Search"><span>TM Search & Analysis</span></a></li>
+                <li><a href="Trademark-Monitoring"><span>TM Monitoring Services</span></a></li>
+                <li><a href="Trademark-Docketing"><span>TM Docketing</span></a></li>
+              </ul>
+            </li>
+
+            <li><a class="{% if request.path == '/Patent-Drawings' %}active{% endif %}" href="Patent-Drawings">Drawings</a></li>
+            <!-- <li class="dropdown"><a href="#"><span>About</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+            <ul>
+              <li><a href="Legal-Consultants">Our Legal Consultants</a></li>
+              <li><a href="Invalidation-Validation-Search">Our Vision</a></li>
+            </ul>
+          </li> -->
+            <li><a class="{% if request.path == '/Article-and-Blog' %}active{% endif %}" href="Article-and-Blogs">Articles</a></li>
+
+            <li><a class="{% if request.path == '/Legal-Consultants' %}active{% endif %}" href="Legal-Consultants">Our Legal Consultants</a></li>
+
+            <li><a class="{% if request.path == '/Contact-Us' %}active{% endif %}" href="Contact-Us">Contact</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+
+      </div>
+  </header>
+
+
+
+
+
+  {% block body %} {% endblock %}
+
+
+  <div style="margin-bottom:30em;"></div>
+  <footer id="footer" class="footer dark-background">
+    <div class="container">
+
+      <div class="row">
+        <!--Grid column-->
+        <div class="col-6 mb-5 text-start">
+          <h1 style="font-family: myFirstFont;" class="sitename">Engineer<span
+              style="color: #ef6603; font-size: xxx-large;">IP</span></h1>
+          <p>Your Partner in Intellectual Property Excellence.</p>
+          <div class="social-links d-flex justify-content-start">
+            <a href="#"><i class="bi bi-twitter-x"></i></a>
+            <a href="#"><i class="bi bi-facebook"></i></a>
+            <a href="#"><i class="bi bi-instagram"></i></a>
+            <a href="#"><i class="bi bi-skype"></i></a>
+            <a href="https://www.linkedin.com/company/engineer-ip"><i class="bi bi-linkedin"></i></a>
+          </div>
+        </div>
+        <!--Grid column-->
+
+        <!--Grid column-->
+        <div class="col-3 mb-5 text-start">
+          <h5 class="title"><strong></strong>Quick Links</h5>
+          <ul class="list-unstyled mb-0">
+            <li><a href="Invalidation-Validation-Search" class="text-white">In/validation Search</a></li>
+            <li><a href="Patentability-Search" class="text-white">Patent Search</a></li>
+            <li><a href="Infringement-Non-Infringement-Analysis" class="text-white">Infrigement Analysis</a></li>
+            <li><a href="Office-Action-Response-Drafting" class="text-white">O/A Response</a></li>
+            <li><a href="Patent-Drawings" class="text-white">Drawings</a></li>
+          </ul>
+        </div>
+        <!--Grid column-->
+
+        <!--Grid column-->
+        <div class="col-3 mb-5 text-start">
+          <h5></strong>Shortcuts</strong></h5>
+          <ul class="list-unstyled">
+            <li><a href="Contact-Us" class="text-white">Contact Us</a></li>
+            <li><a href="Legal-Consultants" class="text-white">Team</a></li>
+            <li><a href="Patent-Drafting" class="text-white">Patent</a></li>
+            <li><a href="Trademark-Search" class="text-white">Trademark</a></li>
+          </ul>
+        </div>
+        <!--Grid column-->
+      </div>
+
+
+    </Div>
+    <div class="container">
+      <div class="copyright">
+        <span>© 2025 EngineerIP</span>
+      </div>
+      <div class="credits">All rights reserved. Unauthorized duplication or distribution is prohibited.
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+      class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <!-- <div id="preloader">
+
+    <img src="/static/img/preloder1.png" alt="Loading..." />
+  </div> -->
+
+  <div id="preloader">
+    <div class="gradient-overlay"></div>
+    <div class="grid">
+      <!-- Generate 100 tiles for the grid -->
+      {% for i in range(100) %}
+      <div class="tile" style="--delay: {{ i }}"></div>
+      {% endfor %}
+    </div>
+    <div class="geometric-shapes">
+      <div class="shape"></div>
+      <div class="shape" style="animation-delay: -1s;"></div>
+      <div class="shape" style="animation-delay: -2s;"></div>
+    </div>
+    <img src="/static/img/preloder1.png" alt="Loading..." />
+  </div>
+
+
+
+
+  <!-- Vendor JS Files -->
+  <script src="static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="static/vendor/php-email-form/validate.js"></script>
+  <script src="static/vendor/aos/aos.js"></script>
+  <script src="static/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="static/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+  <script src="static/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="static/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <!-- Main JS File -->
+  <script src="static/js/main.js"></script>
+
+
+
+
+
+</body>
+
+</html>

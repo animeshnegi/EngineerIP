@@ -1,0 +1,890 @@
+{% extends "Camp/admin-layout.html" %}
+{% block body %}
+
+<style>
+    .campaign-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    .campaign-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .campaign-header {
+        background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+        color: white;
+        padding: 15px;
+    }
+
+    .campaign-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .status-active {
+        background-color: #198754;
+        color: white;
+    }
+
+    .status-paused {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-completed {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .campaign-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .recipient-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+    }
+
+    .schedule-form {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: white;
+        text-align: center;
+    }
+
+    .stat-card i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .progress-container {
+        height: 8px;
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .progress-bar {
+        height: 100%;
+    }
+
+    .campaign-details {
+        padding: 15px;
+    }
+
+    .campaign-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .campaign-subtitle {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .filter-controls {
+        background-color: white;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .dataset-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-left: 4px solid #0d6efd;
+    }
+
+    .template-preview {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 15px;
+        height: 250px;
+        overflow-y: auto;
+        background-color: white;
+    }
+
+    .delay-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .delay-input {
+        width: 80px;
+        text-align: center;
+    }
+
+    /* New styles for follow-up sections */
+    .followup-section {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+        border-left: 3px solid #0dcaf0;
+    }
+
+    .followup-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .followup-title {
+        font-weight: 600;
+        color: #0d6efd;
+    }
+
+    .remove-followup {
+        background: none;
+        border: none;
+        color: #dc3545;
+        cursor: pointer;
+    }
+
+    .delay-control {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .delay-input {
+        width: 80px;
+        text-align: center;
+    }
+
+    .add-followup-btn {
+        margin-top: 15px;
+        background-color: #e9ecef;
+        border: 1px dashed #6c757d;
+        color: #6c757d;
+        width: 100%;
+        padding: 8px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .add-followup-btn:hover {
+        background-color: #dee2e6;
+    }
+
+    .followup-counter {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        background-color: #0d6efd;
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 24px;
+        margin-right: 8px;
+    }
+</style>
+
+
+
+
+<div class="container mt-5 pt-5">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-primary mb-0">Campaign Automation</h1>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newCampaignModal">
+            <i class="bi bi-plus-lg me-1"></i> New Automated Campaign
+        </button>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #0d6efd, #0b5ed7);">
+                <i class="bi bi-send"></i>
+                <h3>{{ active_campaigns }}</h3>
+                <p>Active Campaigns</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #198754, #157347);">
+                <i class="bi bi-check-circle"></i>
+                <h3>{{ avg_open_rate }}%</h3>
+                <p>Avg. Open Rate</p>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: {{ avg_open_rate }}%; background-color: #fff;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #ffc107, #ffca2c);">
+                <i class="bi bi-people"></i>
+                <h3>{{ total_recipients }}</h3>
+                <p>Recipients</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #dc3545, #bb2d3b);">
+                <i class="bi bi-clock-history"></i>
+                <h3>{{ scheduled_campaigns }}</h3>
+                <p>Scheduled</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dataset Management -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Manage Campaign Datasets</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="/upload_dataset" enctype="multipart/form-data" class="mb-4">
+                <input type="hidden" name="action" value="upload_dataset">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="datasetName" class="form-label">Dataset Name</label>
+                        <input type="text" class="form-control" id="datasetName" name="dataset_name"
+                            placeholder="e.g., Premium Users" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="csvFile" class="form-label">CSV File</label>
+                        <input class="form-control" type="file" id="csvFile" name="csv_file" accept=".csv" required>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Upload Dataset</button>
+                    </div>
+                </div>
+            </form>
+
+            <h6 class="mt-4 mb-3">Uploaded Datasets</h6>
+            <div class="row">
+                {% for dataset in datasets %}
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ dataset.name }}</h6>
+                                <p class="mb-0 text-muted">
+                                    Records: {{ dataset.record_count }} |
+                                    Created: {{ dataset.created_at.strftime('%b %d, %Y') }}
+                                </p>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <!-- View button (modal or link) -->
+                                <a href="{{ url_for('main.view_dataset', dataset_id=dataset.id) }}"
+                                    class="btn btn-sm btn-outline-primary" title="View Dataset">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+
+                                <!-- Delete button (triggers modal) -->
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                    data-bs-target="#confirmDeleteModal{{ dataset.id }}">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Modal -->
+                <div class="modal fade" id="confirmDeleteModal{{ dataset.id }}" tabindex="-1"
+                    aria-labelledby="confirmDeleteModalLabel{{ dataset.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="POST" action="{{ url_for('main.delete_dataset') }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirmDeleteModalLabel{{ dataset.id }}">Confirm Delete
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete the dataset <strong>{{ dataset.name }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-info">No datasets uploaded yet.</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Campaign List -->
+    <h3 class="mt-4 mb-3">Scheduled Campaigns</h3>
+
+    <div class="row">
+        {% for campaign in campaigns %}
+        <div class="col-md-6">
+            <div class="campaign-card">
+                <div class="campaign-header position-relative">
+                    <span class="campaign-status status-{{ campaign.status }}">{{ campaign.status|capitalize }}</span>
+                    <h5 class="mb-0">{{ campaign.name }}</h5>
+                </div>
+                <div class="campaign-details">
+                    <div class="campaign-title">Dataset: {{ campaign.dataset.name }}</div>
+                    <div class="campaign-subtitle">Next run: {{ campaign.next_run.strftime('%b %d, %Y %I:%M %p') }}
+                    </div>
+                    <div class="campaign-subtitle">Frequency: {{ campaign.frequency }}</div>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Completion:</span>
+                            <span>{{ campaign.completion }}%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar"
+                                style="width: {{ campaign.completion }}%; background-color: #0d6efd;"></div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Recipient Groups:</h6>
+                        <div class="recipient-list">
+                            {% for group in campaign.groups %}
+                            <span class="badge bg-primary me-1 mb-1">{{ group }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="campaign-actions">
+                    {% if campaign.status == 'active' %}
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="pause_campaign">
+                        <input type="hidden" name="campaign_id" value="{{ campaign.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pause"></i>
+                            Pause</button>
+                    </form>
+                    {% elif campaign.status == 'paused' %}
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="resume_campaign">
+                        <input type="hidden" name="campaign_id" value="{{ campaign.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-play"></i>
+                            Resume</button>
+                    </form>
+                    {% endif %}
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#editCampaignModal" data-campaign='{{ campaign|tojson }}'>
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="delete_campaign">
+                        <input type="hidden" name="campaign_id" value="{{ campaign.id }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">No automated campaigns scheduled yet.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- New Campaign Modal -->
+<div class="modal fade" id="newCampaignModal" tabindex="-1" aria-labelledby="newCampaignModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="newCampaignModalLabel">Create New Automated Campaign</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form method="POST" action="/create_campaign" id="campaignForm">
+                <input type="hidden" name="action" value="create_campaign">
+                <input type="hidden" id="sequenceCount" name="sequence_count" value="1">
+
+                <div class="modal-body">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Campaign Name *</h6>
+                    </div>
+                    <div class="mb-3 mt-2">
+                        <input type="text" class="form-control" id="campaignName" name="campaign_name"
+                            placeholder="e.g., Welcome Series" required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="senderEmail" class="form-label">Sender Email *</label>
+                            <select class="form-select" id="senderEmail" name="sender_email" required>
+                                <option value="">-- Select Sender --</option>
+                                {% for email in sender_emails %}
+                                <option value="{{ email }}">{{ email }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label d-block">Add a New Template</label>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#templateModal"><i class="bi bi-journal-plus"></i> New Template</button>
+                        </div>
+                    </div>
+
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="recipientDataset" class="form-label">Recipient Dataset *</label>
+                            <select class="form-select" id="recipientDataset" name="recipient_dataset" required>
+                                <option value="">-- Select Dataset --</option>
+                                {% for dataset in datasets %}
+                                <option value="{{ dataset.id }}">{{ dataset.name }} ({{ dataset.record_count }}
+                                    contacts)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="startDateTime" class="form-label">Start Date & Time *</label>
+                            <input type="datetime-local" class="form-control" id="startDateTime" name="start_datetime"
+                                required>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Email Sequence</h6>
+                        </div>
+                        <div class="card-body">
+
+
+
+                            <div class="mb-3">
+                                <label for="emailSubject" class="form-label">Email Subject *</label>
+                                <input type="text" class="form-control" id="emailSubject" name="email_subject"
+                                    placeholder="Enter your email subject line" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="emailTemplate" class="form-label">Email Template *</label>
+                                <div class="input-group mb-3">
+                                    <select class="form-select" id="emailTemplate" name="email_template" required>
+                                        <option value="">-- Select Template --</option>
+                                        {% for template in templates %}
+                                        <option value="{{ template.id }}">{{ template.name }}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                </div>
+                                <div class="template-preview" id="templatePreview">
+                                    <p class="text-muted text-center mt-5">Select a template to preview</p>
+                                </div>
+                            </div>
+
+
+
+                            <!-- Follow-up Sections Container -->
+                            <div id="followupContainer">
+                                <!-- Follow-ups will be added here dynamically -->
+                            </div>
+
+                            <!-- Add Follow-up Button -->
+                            <button type="button" class="add-followup-btn" id="addFollowupBtn">
+                                <i class="bi bi-plus-circle me-1"></i> Add Follow-up Email
+                            </button>
+                        </div>
+                    </div>
+
+
+
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Schedule Campaign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Follow-up email management
+    let followupCount = 0;
+    const followupContainer = document.getElementById('followupContainer');
+    const addFollowupBtn = document.getElementById('addFollowupBtn');
+    const sequenceCountInput = document.getElementById('sequenceCount');
+
+    // Function to create a new follow-up section
+    function createFollowupSection() {
+        if (followupCount >= 3) {
+            alert('Maximum of 3 follow-ups allowed');
+            return;
+        }
+
+        followupCount++;
+        sequenceCountInput.value = followupCount + 1; // +1 for initial email
+
+        const section = document.createElement('div');
+        section.className = 'followup-section mb-4 p-3 border rounded';
+        section.dataset.followupId = followupCount;
+
+        section.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">
+                <span class="badge bg-secondary">${followupCount + 1}</span> 
+                Follow-up Email
+            </h5>
+            <button type="button" class="btn btn-sm btn-danger remove-followup">
+                <i class="bi bi-trash"></i> Remove
+            </button>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Email Subject *</label>
+            <input type="text" class="form-control" 
+                name="email_subject[]" placeholder="Enter follow-up subject" required>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Email Template *</label>
+            <select class="form-select" name="email_template[]" required>
+                <option value="">-- Select Template --</option>
+                {% for template in templates %}
+                <option value="{{ template.id }}">{{ template.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label">Send after:</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" 
+                        name="followup_delay[]" min="1" max="30" value="${followupCount}" required>
+                    <span class="input-group-text">days</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+        followupContainer.appendChild(section);
+
+        // Add event listener for remove button
+        section.querySelector('.remove-followup').addEventListener('click', function () {
+            followupContainer.removeChild(section);
+            followupCount--;
+            sequenceCountInput.value = followupCount + 1;
+        });
+    }
+
+    // Initialize follow-up functionality
+    addFollowupBtn.addEventListener('click', createFollowupSection);
+
+
+
+
+    // Remove follow-up handler (using event delegation)
+    followupContainer.addEventListener('click', function (e) {
+        if (e.target.closest('.remove-followup')) {
+            const button = e.target.closest('.remove-followup');
+            const followupId = button.dataset.followup;
+            const section = document.getElementById(`followup-${followupId}`);
+
+            if (section) {
+                section.remove();
+                followupCount--;
+                sequenceCountInput.value = followupCount + 1; // +1 for initial email
+
+                // Re-enable add button if needed
+                if (followupCount < 3) {
+                    addFollowupBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i> Add Follow-up Email';
+                    addFollowupBtn.disabled = false;
+                }
+
+                // Reassign IDs to remaining follow-ups
+                const remainingSections = followupContainer.querySelectorAll('.followup-section');
+                remainingSections.forEach((section, index) => {
+                    const newId = index + 1;
+                    section.id = `followup-${newId}`;
+
+                    // Update header
+                    const header = section.querySelector('.followup-header');
+                    header.querySelector('.followup-counter').textContent = newId + 1;
+                    header.querySelector('.followup-title').innerHTML = `
+                        <span class="followup-counter">${newId + 1}</span> 
+                        ${newId === 1 ? 'First' : 'Second'} Follow-up Email
+                    `;
+
+                    // Update remove button
+                    const removeBtn = section.querySelector('.remove-followup');
+                    removeBtn.dataset.followup = newId;
+
+                    // Update IDs for form elements
+                    const inputs = section.querySelectorAll('input, select, textarea');
+                    inputs.forEach(input => {
+                        const oldId = input.id;
+                        const newInputId = oldId.replace(/\d+$/, newId);
+                        input.id = newInputId;
+
+                        if (input.name.includes('delay')) {
+                            input.value = newId; // Set default delay based on position
+                        }
+                    });
+
+                    // Update preview container ID
+                    const preview = section.querySelector('.template-preview');
+                    preview.id = `followupPreview${newId}`;
+                });
+
+                // Re-setup previews for all remaining sections
+                remainingSections.forEach((_, index) => {
+                    setupFollowupPreview(index + 1);
+                });
+            }
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize template preview for initial email
+        const initialTemplateSelect = document.getElementById('emailTemplate');
+        const initialSubjectInput = document.getElementById('emailSubject');
+        const initialPreviewContainer = document.getElementById('templatePreview');
+
+        if (initialTemplateSelect && initialPreviewContainer) {
+            initialTemplateSelect.addEventListener('change', function () {
+                previewTemplate(this.value, initialPreviewContainer, initialSubjectInput);
+            });
+
+            // Optionally trigger preview if a template is pre-selected
+            if (initialTemplateSelect.value) {
+                previewTemplate(initialTemplateSelect.value, initialPreviewContainer, initialSubjectInput);
+            }
+        }
+    });
+</script>
+
+<!-- Template Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1" aria-labelledby="templateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="templateModalLabel">Create New Email Template</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form method="POST" id="templateForm">
+                <input type="hidden" name="action" value="save_template">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="templateName" class="form-label">Template Name *</label>
+                        <input type="text" class="form-control" id="templateName" name="template_name"
+                            placeholder="e.g., Welcome Email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="templateSubject" class="form-label">Subject Line *</label>
+                        <input type="text" class="form-control" id="templateSubject" name="template_subject"
+                            placeholder="Enter subject line" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="templateContent" class="form-label">Email Content *</label>
+                        <textarea id="templateContent" name="template_content" class="form-control" rows="10"
+                            placeholder="Compose your email content here..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Template</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+    // Toggle custom delay section
+    document.getElementById('frequency').addEventListener('change', function () {
+        const customSection = document.getElementById('customDelaySection');
+        if (this.value === 'custom') {
+            customSection.style.display = 'block';
+        } else {
+            customSection.style.display = 'none';
+        }
+    });
+
+    // Preview template when selected
+    function previewTemplate(templateId, previewElement, subjectElement = null) {
+        if (templateId) {
+            fetch(`/get_template/${templateId}`)
+                .then(response => response.json())
+                .then(data => {
+                    previewElement.innerHTML = data.content;
+                    if (subjectElement) {
+                        subjectElement.value = data.subject;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching template:', error);
+                    previewElement.innerHTML = '<p class="text-danger">Error loading template preview</p>';
+                });
+        } else {
+            previewElement.innerHTML = '<p class="text-muted text-center mt-5">Select a template to preview</p>';
+            if (subjectElement) {
+                subjectElement.value = '';
+            }
+        }
+    }
+
+    // Initialize template preview for initial email
+    const initialTemplateSelect = document.getElementById('emailTemplate');
+    const initialSubjectInput = document.getElementById('emailSubject');
+    const initialPreviewContainer = document.getElementById('templatePreview');
+
+    if (initialTemplateSelect && initialPreviewContainer) {
+        initialTemplateSelect.addEventListener('change', function () {
+            previewTemplate(this.value, initialPreviewContainer, initialSubjectInput);
+        });
+    }
+
+    // Preview function for follow-ups
+    function setupFollowupPreview(followupId) {
+        const templateSelect = document.getElementById(`followupTemplate${followupId}`);
+        const subjectInput = document.getElementById(`followupSubject${followupId}`);
+        const previewContainer = document.getElementById(`followupPreview${followupId}`);
+
+        if (templateSelect && previewContainer) {
+            // Remove any existing event listener
+            const newTemplateSelect = templateSelect.cloneNode(true);
+            templateSelect.parentNode.replaceChild(newTemplateSelect, templateSelect);
+
+            // Set up new event listener
+            newTemplateSelect.addEventListener('change', function () {
+                previewTemplate(this.value, previewContainer, subjectInput);
+            });
+        }
+    }
+
+
+    // Set default start date/time to tomorrow at 10:00 AM
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(10, 0, 0, 0);
+
+    const formattedDate = tomorrow.toISOString().slice(0, 16);
+    document.getElementById('startDateTime').value = formattedDate;
+
+    // Handle template form submission
+    document.getElementById('templateForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        for (instance in CKEDITOR.instances) {
+            CKEDITOR.instances[instance].updateElement();
+        }
+
+        const formData = new FormData(this);
+        fetch('/save_template', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Template saved successfully!');
+                    // Refresh the template dropdown
+                    const templateSelect = document.getElementById('emailTemplate');
+                    const newOption = new Option(data.template_name, data.template_id);
+                    templateSelect.add(newOption);
+                    templateSelect.value = data.template_id;
+
+                    // Update preview
+                    document.getElementById('templatePreview').innerHTML = data.content;
+                    document.getElementById('emailSubject').value = data.subject;
+
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
+                } else {
+                    alert('Error saving template: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the template.');
+            });
+    });
+
+    // Handle campaign form submission
+    document.getElementById('campaignForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        fetch('/create_campaign', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Campaign scheduled successfully!');
+                    location.reload(); // Refresh page to show new campaign
+                } else {
+                    alert('Error creating campaign: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while creating the campaign.');
+            });
+    });
+
+
+    CKEDITOR.replace('templateContent');
+</script>
+
+{% endblock %}

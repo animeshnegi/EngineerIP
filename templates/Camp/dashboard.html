@@ -1,0 +1,273 @@
+{% extends "Camp/admin-layout.html" %}
+{% block body %}
+
+
+
+<!-- Main page content  -->
+
+
+<div class="container mt-5 pt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="text-primary mb-0">Campaign Dashboard</h3>
+    </div>
+
+    <hr class="mt-4 mb-4">
+    <!-- Actions -->
+    <div class="mb-4">
+        <form method="POST" class="d-inline">
+            <input type="hidden" name="action" value="empty_csv">
+            <button type="submit" class="btn btn-danger"><i class="bi bi-folder-x"></i></button>
+        </form>
+        <form method="POST" enctype="multipart/form-data" class="d-inline ms-2">
+            <input type="file" name="file" accept=".csv" class="form-control d-inline-block w-auto">
+            <button type="submit" class="btn btn-success">Upload<i class="bi bi-plus"></i><i
+                    class="bi bi-plus"></i></button>
+        </form>
+
+        <!-- Campaign Buttons -->
+
+        <button class="btn btn-primary" onclick="openEditor()">Template</button>
+
+
+
+        <!-- CKEditor Modal -->
+        <!-- CKEditor Modal -->
+        <div id="editorModal" style="display:none;" class="p-4 border rounded shadow">
+            <div class=" mb-4 modal-header">
+                <h5 class="modal-title" id="editorModalLabel">Edit Email Template</h5>
+
+                <form method="POST" class="d-inline" onsubmit="event.preventDefault(); sendCampaignDirectly();">
+                    <button type="submit" class="btn btn-success">Send Campaign</button>
+                </form>
+                <button class="btn btn-secondary" onclick="closeEditor()">Close</button>
+            </div>
+            <Hr>
+            </Hr>
+            <div class="mb-2 border p-3 rounded">
+                <label for="emailSender" class="form-label">From Email</label>
+                <select id="emailSender" class="form-select">
+                    <option value="" disabled selected>Select an email</option>
+                    <option value="mike@engineer-ip.com">mike@engineer-ip.com</option>
+                    <!-- <option value="sender2@example.com">sender2@example.com</option>
+                                <option value="sender3@example.com">sender3@example.com</option> -->
+                </select>
+            </div>
+            <div class="mb-2 border p-3 rounded">
+                <label for="emailSubject" class="form-label">Subject Line</label>
+                <input type="text" id="emailSubject" class="form-control" placeholder="Enter email subject">
+            </div>
+            <textarea id="emailEditor"></textarea>
+            <!-- <div class="mt-3">
+                    <form method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="send_campaign">
+                        <button type="submit" class="btn btn-success" onclick="sendCampaignDirectly()">Send Campaign</button>
+                    </form>
+                    <button class="btn btn-success" onclick="saveTemplate()">Save Template</button>
+                    <button class="btn btn-secondary" onclick="closeEditor()">Close</button>
+                </div> -->
+        </div>
+    </div>
+
+
+
+
+
+    <!--  Data Tables -->
+
+    <hr class="mt-2 mb-2">
+    <!-- CSV Data Table -->
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Srno</th> <!-- Serial Number Column -->
+                    <th>Email</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Custom ID</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for idx, recipient in enumerate(recipients) %}
+                <tr>
+                    <td>{{ recipient.recipient_id }}</td>
+                    <td>{{ recipient.email }}</td>
+                    <td>{{ recipient.first_name }}</td>
+                    <td>{{ recipient.last_name }}</td>
+                    <td>{{ recipient.custom_id }}</td>
+                    
+                    <td>
+                        <form method="POST" class="d-inline" >
+                            <input type="hidden" name="action" value="delete_row">
+                            <input type="hidden" name="recipient_id" value="{{recipient.recipient_id}}">
+                            <button type="submit" class="btn btn-danger btn-sm btn-action"><i
+                                    class="bi bi-trash3-fill"></i></button>
+                        </form>
+                        <button class="btn btn-info btn-sm btn-action" onclick="toggleEditRow('{{ recipient.recipient_id  }}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </td>
+                </tr>
+
+                <!-- Editable Row -->
+                <form method="POST" id="edit-form-{{ recipient.recipient_id  }}">
+                    <tr id="edit-row-{{ recipient.recipient_id  }}" class="edit-row" style="display: none;">
+                        <td>{{ idx + 1 }}</td>
+                        <td><input type="text" name="first_name" value="{{ recipient.first_name }}"
+                                class="form-control form-control-sm"></td>
+                        <td><input type="text" name="last_name" value="{{ recipient.last_name }}"
+                                class="form-control form-control-sm"></td>
+                        <td><input type="email" name="email" value="{{ recipient.email }}"
+                                class="form-control form-control-sm"></td>
+                        <td><input type="text" name="custom_id" value="{{ recipient.custom_id }}"
+                                class="form-control form-control-sm"></td>
+                        <td>
+                            <input type="hidden" name="action" value="edit_row">
+                            <input type="hidden" name="recipient_id" value="{{ recipient.recipient_id  }}">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check2-circle"></i>
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm"
+                                onclick="toggleEditRow('{{ recipient.recipient_id  }}')">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </form>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+<div class="pagination d-flex justify-content-center mt-4">
+                            <nav>
+                                <ul class="pagination">
+
+                                    {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                            href="{{ url_for('campaign.campaign_dashboard', page=pagination.prev_num) }}"
+                                            aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                                    {% endif %}
+
+                                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2,
+                                    right_current=2) %}
+                                    {% if p %}
+                                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                                        <a class="page-link" href="{{ url_for('campaign.campaign_dashboard', page=p) }}">{{ p }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                                    {% endif %}
+                                    {% endfor %}
+
+                                    {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                            href="{{ url_for('campaign.campaign_dashboard', page=pagination.next_num) }}"
+                                            aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                                    {% endif %}
+
+                                </ul>
+                            </nav>
+                        </div>
+    <!-- Footer Information -->
+    <div class="footer-info">
+        <p>Total Contacts: {{ length_recipients }}</p> <!-- Exclude Header Row -->
+    </div>
+</div>
+
+
+
+<script>
+    function toggleEditRow(recipientId) {
+        const row = document.getElementById('edit-row-' + recipientId);
+        if (row.style.display === 'none' || row.style.display === '') {
+            row.style.display = 'table-row';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+
+
+
+    // Function for modal full functions
+    function openEditor() {
+        document.getElementById('editorModal').style.display = 'block';
+        CKEDITOR.replace('emailEditor', {
+            allowedContent: true
+        });
+    }
+
+
+
+    // Function for closing modal
+
+    function closeEditor() {
+        document.getElementById('editorModal').style.display = 'none';
+        CKEDITOR.instances.emailEditor.destroy();
+    }
+
+    // Function for saving file
+    function saveTemplate() {
+        const emailContent = CKEDITOR.instances.emailEditor.getData();
+        const fromEmail = document.getElementById('emailSender').value;
+        const subject = document.getElementById('emailSubject').value;
+
+        fetch('/save_template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ template: emailContent, from_email: fromEmail, subject: subject }),
+        })
+            .then(response => response.json())
+            .then(data => alert(data.message || "Template saved successfully!"))
+            .catch(error => console.error("Error:", error));
+
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editorModal'));
+        modal.hide();
+    }
+
+
+    // Function for sending campaigns
+
+    function sendCampaignDirectly() {
+        const fromEmail = document.getElementById('emailSender').value;
+        const subject = document.getElementById('emailSubject').value;
+        const emailContent = CKEDITOR.instances.emailEditor.getData();
+
+        const formData = new FormData();
+        formData.append('from_email', fromEmail);
+        formData.append('subject', subject);
+        formData.append('html_content', emailContent);
+
+        fetch('/campaigns/send_campaign', {
+            method: 'POST',
+            body: formData,
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || "Campaign sent successfully!");
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+
+
+
+
+
+</script>
+
+
+{% endblock %}
