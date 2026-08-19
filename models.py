@@ -193,7 +193,7 @@ class Campaign(Base):
     def validate_sender_email(self, key, email):
         if not email or '@' not in email:
             raise ValueError("Invalid sender email")
-        return email.lower().strip()
+        return email.strip()
 
 
 class CampaignEmail(db.Model):
@@ -241,10 +241,6 @@ class CampaignRecipient(Base):
     __table_args__ = (
         db.UniqueConstraint('campaign_id', 'contact_id', name='_campaign_contact_uc'),
     )
-
-
-
-
 
 
 

@@ -1202,6 +1202,7 @@
     }
 
     // Chat functions
+    // Chat functions
     async function openChat(projectId) {
         currentProjectId = projectId;
         const sidebar = document.getElementById('chatSidebar');
@@ -1238,6 +1239,80 @@
         // Refresh projects to update new message indicators
         loadProjects();
     }
+
+
+    // Chat functions
+    async function openChat(projectId) {
+        currentProjectId = projectId;
+        const sidebar = document.getElementById('chatSidebar');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        // Mark messages as seen on the server
+        await markMessagesAsSeen(projectId);
+
+        // Enable input and button
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+
+        // Open sidebar
+        sidebar.classList.add('active');
+
+        // Load project info and messages
+        await loadChatProjectInfo(projectId);
+        await loadMessages(true); // initial load
+
+        // Focus input
+        setTimeout(() => {
+            messageInput.focus();
+        }, 100);
+
+        // Start auto-refresh for chat
+        if (chatRefreshInterval) {
+            clearInterval(chatRefreshInterval);
+        }
+        chatRefreshInterval = setInterval(() => {
+            loadMessages(false);
+        }, 5000);
+
+        // ✅ Update only the card & stats instead of reloading all projects
+        updateProjectCardAfterSeen(projectId);
+        loadStatistics();
+    }
+
+    // Add this helper function right after the openChat function
+    function updateProjectCardAfterSeen(projectId) {
+        const card = document.querySelector(`.project-card-modern[data-project-id="${projectId}"]`);
+        if (!card) return;
+
+        // Remove the "has‑new‑messages" styling and the blinking indicator
+        card.classList.remove('has-new-messages');
+        const indicator = card.querySelector('.new-messages-indicator');
+        if (indicator) indicator.remove();
+
+        // Update the "Message" button – keep only the icon and base text
+        const messageBtn = card.querySelector('.action-btn.primary');
+        if (messageBtn) {
+            const icon = messageBtn.querySelector('i.fas.fa-paper-plane');
+            messageBtn.innerHTML = '';
+            if (icon) messageBtn.appendChild(icon);
+            messageBtn.appendChild(document.createTextNode(' Message'));
+            messageBtn.classList.remove('has-new');
+        }
+
+        // Remove the "New Messages" meta‑item if it exists
+        const metaItems = card.querySelectorAll('.meta-item');
+        metaItems.forEach(item => {
+            const label = item.querySelector('.meta-label');
+            if (label && label.textContent.trim() === 'New Messages') {
+                item.remove();
+            }
+        });
+
+        // Also update the data-new-messages attribute so future DOM updates stay consistent
+        card.setAttribute('data-new-messages', 'false');
+    }
+
 
     async function markMessagesAsSeen(projectId) {
         try {

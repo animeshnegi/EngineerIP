@@ -295,6 +295,10 @@
                         Cases</span></a>
             </li>
             <li>
+                <a href="{{ url_for('main.Share_files')}}"><i class="bi bi-cloud-upload-fill"></i> <span>Upload
+                        Files</span></a>
+            </li>
+            <li>
                 <a href="#"><i class="bi bi-calendar-check"></i> <span>Calendar</span></a>
             </li>
             <li>
@@ -309,34 +313,35 @@
     <!-- Main Content -->
     <div id="content">
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-1">
-        <h2 style="margin-left: 3%;"> {% if request.path == '/docket/' %}DocketTrack{% endif %}
-             {% if request.path == '/docket/My-desk' %}My Space</i>{% endif %}
-              {% if request.path == '/docket/add-case' %}Upload Case <i class="bi bi-cloud-upload-fill"></i>{% endif %}
-               {% if request.path == '/Add-User' %}active{% endif %}
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <h2 style="margin-left: 3%;"> {% if request.path == '/docket/' %}DocketTrack{% endif %}
+                {% if request.path == '/docket/My-desk' %}My Space</i>{% endif %}
+                {% if request.path == '/docket/add-case' %}Upload Case <i class="bi bi-cloud-upload-fill"></i>{% endif
+                %}
                 {% if request.path == '/Add-User' %}active{% endif %}
-        </h2>
-        <div class="d-flex align-items-center">
-            <div class="me-3">
-                <span class="text-muted">Welcome,</span>
-                <strong>{{user_name}}</strong>
-            </div>
-            <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-person-circle"></i>
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{url_for('docket.user_profile')}}">My Profile</a></li>
-                    <li><a class="dropdown-item" href="#">Settings</a></li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    <li><a class="dropdown-item" href="{{url_for('docket.logout')}}">Logout</a></li>
-                </ul>
+                {% if request.path == '/Add-User' %}active{% endif %}
+            </h2>
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <span class="text-muted">Welcome,</span>
+                    <strong>{{user_name}}</strong>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{url_for('docket.user_profile')}}">My Profile</a></li>
+                        <li><a class="dropdown-item" href="#">Settings</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li><a class="dropdown-item" href="{{url_for('docket.logout')}}">Logout</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
 
 
         {% block body %} {% endblock %}

@@ -45,7 +45,7 @@ def create_app():
     with app.app_context():
         try:
             # Import docket models to ensure they are registered
-            from docket.models import FileRecord, UploadedFile, User, Configuration, Country, USPTOApiLog, FeeSchedule, AutomationLog, NotificationLog, Document, MaintenanceFee, OfficeAction, StatusHistory, Deadline, Case, Inventor, Attorney, NotificationType, DeadlineType, CaseStatus, CaseType, Project, ProjectMessage, ProjectFile, ProjectNotification
+            from docket.models import SharedFile, FileRecord, UploadedFile, User, Configuration, Country, USPTOApiLog, FeeSchedule, AutomationLog, NotificationLog, Document, MaintenanceFee, OfficeAction, StatusHistory, Deadline, Case, Inventor, Attorney, NotificationType, DeadlineType, CaseStatus, CaseType, Project, ProjectMessage, ProjectFile, ProjectNotification
             db.create_all()  # This will create all tables that don't exist
             print("All tables checked/created successfully")
         except Exception as e:

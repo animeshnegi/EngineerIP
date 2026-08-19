@@ -47,7 +47,26 @@ def get_current_user():
         return User.query.get(user_id)
     return None
 
+def get_current_user_name():
+    """Get current user's full name"""
+    user = get_current_user()
+    if user:
+        return f"{user.first_name} {user.last_name}"
+    return 'Guest'
 
+def is_user_logged_in():
+    """Check if user is logged into docket system"""
+    return session.get('user_id') is not None
+
+def format_file_size(bytes):
+    """Format file size from bytes to human readable format"""
+    if bytes is None:
+        return '0 B'
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if bytes < 1024.0:
+            return f"{bytes:.1f} {unit}"
+        bytes /= 1024.0
+    return f"{bytes:.1f} TB"
 
 # Password hashing
 def hash_password(password):
@@ -2574,5 +2593,16 @@ def change_password():
             'success': False,
             'message': f'Error changing password: {str(e)}'
         }), 500
+
+
+
+
+
+
+
+
+
+
+
 
 

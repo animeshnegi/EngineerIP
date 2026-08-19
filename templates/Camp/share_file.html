@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My File Vault - Share Files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        .navbar-custom {
+            background: linear-gradient(135deg, #000000 0%, #1f1f1f 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px 15px;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .upload-zone {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%) !important;
+            border-color: #667eea !important;
+        }
+
+        .upload-zone.drag-over {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%) !important;
+            border-color: #4f46e5 !important;
+            transform: scale(1.02);
+        }
+
+        .border-dashed {
+            border: 3px dashed #cbd5e1;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e5e7eb;
+            height: 100%;
+        }
+
+        .file-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #cbd5e1;
+        }
+
+        .file-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+
+        .fade-enter {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .back-btn {
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+
+<body style="background: linear-gradient(135deg, #f5f7fa 0%, #e9eef3 100%); min-height: 100vh;">
+    <!-- Navbar with Back Button and User Info -->
+    <nav class="navbar navbar-custom navbar-dark fixed-top">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <a href="javascript:history.back()" class="btn btn-light back-btn me-3" title="Go Back">
+                    <i class="fas fa-arrow-left me-1"></i> Back
+                </a>
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>
+                    File Vault
+                </a>
+            </div>
+            <div class="user-info">
+                <i class="fas fa-user-circle me-1"></i>
+                <span class="text-white">
+                    {% if is_logged_in %}
+                    Welcome, {{ user_name }}!
+                    <span class="badge bg-success ms-2">Logged In</span>
+                    {% else %}
+                    Guest Mode
+                    <a href="{{ url_for('docket.login') }}" class="text-white ms-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    </a>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="margin-top: 5rem;">
+        <!-- User Info Banner -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info alert-dismissible fade show mb-0" role="alert">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-user-circle me-2"></i>
+                            <strong>Welcome, {{ user_name }}!</strong>
+                            {% if is_logged_in %}
+                            <span class="badge bg-success ms-2">Logged In</span>
+                            <span class="ms-2">Your files are saved to your account and will be available anytime you
+                                log
+                                in.</span>
+                            {% else %}
+                            <span class="badge bg-warning ms-2">Guest Mode</span>
+                            <span class="ms-2">Your files are saved in this browser. <a
+                                    href="{{ url_for('docket.login') }}">Login</a> to access your files from any
+                                device.</span>
+                            {% endif %}
+                        </div>
+                        {% if not is_logged_in %}
+                        <div>
+                            <a href="{{ url_for('docket.login') }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-sign-in-alt me-1"></i>Login / Sign Up
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-gradient-primary text-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0 fw-bold">
+                                    <i class="fas fa-cloud-upload-alt me-2"></i> My File Vault
+                                </h4>
+                                <p class="mb-0 mt-2 opacity-75">Manage and share your documents securely</p>
+                            </div>
+                            <div>
+                                <span class="badge bg-white text-dark px-3 py-2 rounded-pill">
+                                    <i class="fas fa-database me-1"></i> <span id="fileCount">0</span> Files
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Drag & Drop Upload Zone -->
+                        <div class="row mb-5">
+                            <div class="col-12">
+                                <div id="dropZone"
+                                    class="upload-zone text-center p-5 rounded-4 border-2 border-dashed transition-all"
+                                    style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); cursor: pointer; transition: all 0.3s ease;">
+                                    <input type="file" id="fileInput" style="display: none;" multiple>
+                                    <div class="upload-icon mb-3">
+                                        <i class="fas fa-cloud-upload-alt fa-4x text-primary"></i>
+                                    </div>
+                                    <h5 class="mb-2">Drag & Drop Files Here</h5>
+                                    <p class="text-muted mb-3">or click to browse</p>
+                                    <div class="upload-progress" style="display: none;">
+                                        <div class="progress rounded-pill" style="height: 10px;">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                                role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <p class="mt-2 small text-muted" id="uploadFileName"></p>
+                                    </div>
+                                    <small class="text-muted d-block mt-3">
+                                        <i class="fas fa-file-alt me-1"></i> Supports: PDF, DOC, DOCX, JPG, PNG, ZIP
+                                        (Max
+                                        50MB)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Type & Metadata Row -->
+                        <div class="row mb-4" id="fileMetadataPanel" style="display: none;">
+                            <div class="col-md-8 mx-auto">
+                                <div class="card border-0 shadow-sm animate__animated animate__fadeInUp">
+                                    <div class="card-body">
+                                        <h6 class="mb-3"><i class="fas fa-info-circle text-primary me-2"></i>File
+                                            Information
+                                        </h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">File Type</label>
+                                                <select class="form-select" id="uploadFileType">
+                                                    <option value="patent">📄 Patent Document</option>
+                                                    <option value="trademark">™️ Trademark Document</option>
+                                                    <option value="other">📁 Other Document</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-semibold">Category</label>
+                                                <select class="form-select" id="uploadCategory">
+                                                    <option value="legal">Legal</option>
+                                                    <option value="technical">Technical</option>
+                                                    <option value="administrative">Administrative</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-semibold">Description</label>
+                                                <textarea class="form-control" id="uploadDescription" rows="2"
+                                                    placeholder="Add a description for this file..."></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <button class="btn btn-primary w-100" onclick="confirmUpload()">
+                                                    <i class="fas fa-check-circle me-2"></i>Confirm Upload
+                                                </button>
+                                                <button class="btn btn-link w-100 mt-2" onclick="cancelUpload()">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <!-- Stats Cards -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Files</h6>
+                                <h3 class="mb-0" id="statTotal">0</h3>
+                            </div>
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                                <i class="fas fa-folder-open text-primary fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Downloads</h6>
+                                <h3 class="mb-0" id="statDownloads">0</h3>
+                            </div>
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                                <i class="fas fa-download text-success fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Storage Used</h6>
+                                <h3 class="mb-0" id="statStorage">0 MB</h3>
+                            </div>
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                                <i class="fas fa-database text-info fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Share Links</h6>
+                                <h3 class="mb-0" id="statShares">0</h3>
+                            </div>
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                                <i class="fas fa-share-alt text-warning fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <!-- Search & Filter Bar -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="searchFile" placeholder="Search by filename...">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filterType">
+                    <option value="all">All Types</option>
+                    <option value="patent">Patent</option>
+                    <option value="trademark">Trademark</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-3 text-end">
+                <button class="btn btn-outline-primary" onclick="loadMyFiles()">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading your files...</p>
+        </div>
+
+        <!-- Files Grid -->
+        <div id="filesGrid" class="row g-4"></div>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert"
+            aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check-circle me-2"></i><span id="toastMessage"></span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-dismiss with fade animation
+        setTimeout(function () {
+            const alertBanner = document.querySelector('.alert.alert-info');
+            if (alertBanner) {
+                alertBanner.style.transition = 'opacity 0.5s ease';
+                alertBanner.style.opacity = '0';
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alertBanner);
+                    bsAlert.close();
+                }, 500);
+            }
+        }, 3000);
+
+        let currentFileToUpload = null;
+        let toast;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMyFiles();
+            initializeDragDrop();
+            initializeSearchAndFilter();
+            toast = new bootstrap.Toast(document.getElementById('successToast'));
+
+            // Auto-dismiss the welcome notification after 5 seconds
+            setTimeout(function () {
+                const alertBanner = document.querySelector('.alert.alert-info');
+                if (alertBanner) {
+                    const bsAlert = new bootstrap.Alert(alertBanner);
+                    bsAlert.close();
+                }
+            }, 3000);
+        });
+
+
+        // Initialize drag and drop
+        function initializeDragDrop() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFiles(e.target.files);
+                }
+            });
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+        }
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const maxSize = 50 * 1024 * 1024;
+                if (files[0].size > maxSize) {
+                    showAlert('File size exceeds 50MB limit', 'danger');
+                    return;
+                }
+
+                currentFileToUpload = files[0];
+                const fileSize = (currentFileToUpload.size / (1024 * 1024)).toFixed(2);
+
+                document.getElementById('fileMetadataPanel').style.display = 'block';
+                document.getElementById('fileMetadataPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                const progressDiv = document.querySelector('.upload-zone .upload-progress');
+                progressDiv.style.display = 'block';
+                document.getElementById('uploadFileName').textContent = `Selected: ${currentFileToUpload.name} (${fileSize} MB)`;
+            }
+        }
+
+        function confirmUpload() {
+            if (!currentFileToUpload) return;
+
+            const fileType = document.getElementById('uploadFileType').value;
+            const category = document.getElementById('uploadCategory').value;
+            const description = document.getElementById('uploadDescription').value;
+
+            const formData = new FormData();
+            formData.append('file', currentFileToUpload);
+            formData.append('file_type', fileType);
+            formData.append('category', category);
+            formData.append('description', description);
+
+            const progressDiv = document.querySelector('.upload-zone .upload-progress');
+            const progressBar = progressDiv.querySelector('.progress-bar');
+
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressBar.textContent = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.success) {
+                        progressBar.style.width = '100%';
+                        progressBar.textContent = '100%';
+                        progressBar.classList.add('bg-success');
+
+                        showToast('File uploaded successfully! 🎉');
+                        setTimeout(() => {
+                            loadMyFiles();
+                            resetUpload();
+                        }, 1000);
+                    } else {
+                        showAlert(result.error || 'Upload failed', 'danger');
+                        resetUpload();
+                    }
+                } else {
+                    showAlert('Upload failed', 'danger');
+                    resetUpload();
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                showAlert('Network error during upload', 'danger');
+                resetUpload();
+            });
+
+            xhr.open('POST', '/api/upload-file');
+            xhr.send(formData);
+        }
+
+        function cancelUpload() {
+            resetUpload();
+        }
+
+        function resetUpload() {
+            currentFileToUpload = null;
+            document.getElementById('fileMetadataPanel').style.display = 'none';
+            document.getElementById('uploadDescription').value = '';
+            document.getElementById('uploadFileType').value = 'patent';
+            document.getElementById('uploadCategory').value = 'legal';
+
+            const progressDiv = document.querySelector('.upload-zone .upload-progress');
+            progressDiv.style.display = 'none';
+            const progressBar = progressDiv.querySelector('.progress-bar');
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            progressBar.classList.remove('bg-success');
+            document.getElementById('uploadFileName').textContent = '';
+            document.getElementById('fileInput').value = '';
+        }
+
+        async function loadMyFiles() {
+            const spinner = document.getElementById('loadingSpinner');
+            const filesGrid = document.getElementById('filesGrid');
+
+            spinner.style.display = 'block';
+            filesGrid.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/my-files');
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStatistics(result.files);
+                    renderFiles(result.files);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                filesGrid.innerHTML = '<div class="col-12 text-center"><div class="alert alert-danger">Error loading files</div></div>';
+            } finally {
+                spinner.style.display = 'none';
+            }
+        }
+
+        function renderFiles(files) {
+            const filesGrid = document.getElementById('filesGrid');
+            const searchTerm = document.getElementById('searchFile').value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+
+            let filteredFiles = files.filter(file => {
+                const matchesSearch = file.original_filename.toLowerCase().includes(searchTerm);
+                const matchesType = filterType === 'all' || file.file_type === filterType;
+                return matchesSearch && matchesType;
+            });
+
+            if (filteredFiles.length === 0) {
+                filesGrid.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-folder-open fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No files found</h5>
+                    <p class="text-muted">Upload your first file to get started</p>
+                </div>
+            `;
+                return;
+            }
+
+            filesGrid.innerHTML = filteredFiles.map(file => `
+            <div class="col-md-6 col-lg-4 fade-enter" data-file-id="${file.id}">
+                <div class="file-card p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="file-icon">
+                            ${getFileIcon(file.file_type)}
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-link text-dark" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="copyShareLinkDirect('${file.share_url}')">
+                                    <i class="fas fa-copy me-2"></i>Copy Link
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="regenerateShareLink(${file.id})">
+                                    <i class="fas fa-sync-alt me-2"></i>Regenerate Link
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="viewFileInfo(${file.id})">
+                                    <i class="fas fa-info-circle me-2"></i>Details
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteFile(${file.id})">
+                                    <i class="fas fa-trash me-2"></i>Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <h6 class="fw-bold mb-1 text-truncate" title="${escapeHtml(file.original_filename)}">
+                        ${escapeHtml(file.original_filename)}
+                    </h6>
+                    <small class="text-muted d-block mb-2">
+                        <i class="fas fa-calendar-alt me-1"></i>${new Date(file.upload_date).toLocaleDateString()}
+                    </small>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                            <i class="fas fa-download me-1"></i> ${file.download_count || 0} downloads
+                        </span>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="showShareModal('${file.share_url}')">
+                            <i class="fas fa-share-alt me-1"></i>Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        function getFileIcon(fileType) {
+            const icons = {
+                'patent': '<i class="fas fa-file-alt fa-2x text-primary"></i>',
+                'trademark': '<i class="fas fa-trademark fa-2x text-success"></i>',
+                'other': '<i class="fas fa-file fa-2x text-secondary"></i>'
+            };
+            return icons[fileType] || icons['other'];
+        }
+
+        function updateStatistics(files) {
+            document.getElementById('statTotal').textContent = files.length;
+            document.getElementById('fileCount').textContent = files.length;
+
+            const totalDownloads = files.reduce((sum, file) => sum + (file.download_count || 0), 0);
+            document.getElementById('statDownloads').textContent = totalDownloads;
+
+            const totalSize = files.reduce((sum, file) => sum + (file.file_size || 0), 0);
+            const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
+            document.getElementById('statStorage').textContent = `${totalSizeMB} MB`;
+
+            document.getElementById('statShares').textContent = files.length;
+        }
+
+        function initializeSearchAndFilter() {
+            let searchTimeout;
+            document.getElementById('searchFile').addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => loadMyFiles(), 300);
+            });
+            document.getElementById('filterType').addEventListener('change', () => loadMyFiles());
+        }
+
+        function showShareModal(shareUrl) {
+            const modalHtml = `
+            <div class="modal fade" id="shareModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-gradient-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-share-alt me-2"></i>Share File</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-2">Share this link with anyone:</p>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="modalShareLink" value="${shareUrl}" readonly>
+                                <button class="btn btn-primary" onclick="copyToClipboard('${shareUrl}')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted d-block mt-2">Anyone with this link can download the file</small>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            const existingModal = document.getElementById('shareModal');
+            if (existingModal) existingModal.remove();
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+            modal.show();
+
+            document.getElementById('shareModal').addEventListener('hidden.bs.modal', function () {
+                this.remove();
+            });
+        }
+
+        function copyShareLinkDirect(url) {
+            copyToClipboard(url);
+            showToast('Link copied to clipboard!');
+        }
+
+        function showToast(message) {
+            document.getElementById('toastMessage').textContent = message;
+            toast.show();
+        }
+
+        async function regenerateShareLink(fileId) {
+            if (!confirm('Regenerating will invalidate the old link. Continue?')) return;
+
+            try {
+                const response = await fetch('/api/regenerate-share-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_id: fileId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Share link regenerated successfully!');
+                    loadMyFiles();
+                } else {
+                    showAlert(result.error || 'Failed to regenerate link', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error regenerating link', 'danger');
+            }
+        }
+
+        async function deleteFile(fileId) {
+            if (!confirm('Delete this file permanently? This cannot be undone.')) return;
+
+            try {
+                const response = await fetch('/api/delete-file', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ file_id: fileId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('File deleted successfully');
+                    loadMyFiles();
+                } else {
+                    showAlert(result.error || 'Failed to delete', 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error deleting file', 'danger');
+            }
+        }
+
+        async function viewFileInfo(fileId) {
+            try {
+                const response = await fetch(`/api/file-info/${fileId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const info = result.file;
+                    const infoHtml = `
+                    <div class="modal fade" id="infoModal" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header bg-info text-white">
+                                    <h5 class="modal-title"><i class="fas fa-info-circle me-2"></i>File Details</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <table class="table table-borderless">
+                                        <tr><td><strong>Filename:</strong></td><td>${escapeHtml(info.original_filename)}</td></tr>
+                                        <tr><td><strong>Type:</strong></td><td>${info.file_type}</td></tr>
+                                        <tr><td><strong>Size:</strong></td><td>${info.formatted_size || formatFileSize(info.file_size)}</td></tr>
+                                        <tr><td><strong>Uploaded:</strong></td><td>${new Date(info.upload_date).toLocaleString()}</td></tr>
+                                        <tr><td><strong>Downloads:</strong></td><td>${info.download_count || 0}</td></tr>
+                                    </table>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                    const existingModal = document.getElementById('infoModal');
+                    if (existingModal) existingModal.remove();
+
+                    document.body.insertAdjacentHTML('beforeend', infoHtml);
+                    const modal = new bootstrap.Modal(document.getElementById('infoModal'));
+                    modal.show();
+
+                    document.getElementById('infoModal').addEventListener('hidden.bs.modal', function () {
+                        this.remove();
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Error fetching file details', 'danger');
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Link copied to clipboard!');
+            }).catch(() => {
+                showAlert('Failed to copy link', 'danger');
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (!bytes) return 'Unknown';
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            return Math.round(bytes / Math.pow(1024, i)) + ' ' + sizes[i];
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.minWidth = '300px';
+            alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+
+
+    </script>
+</body>
+
+</html>

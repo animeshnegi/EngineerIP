@@ -81,7 +81,7 @@ class EmailService:
             "apikey": self.api_key,
             "subject": f"New Query Received (ID: {sanitized_data['srno']})",
             "from": self.default_sender,
-            "to": ["negi.animesh5@gmail.com", "mail@engineerip.com","ad@solutionengineer.in"],
+            "to": ["negi.animesh5@gmail.com", "mail@engineerip.com"],
             "bodyHtml": email_body,
             "isTransactional": True
         }

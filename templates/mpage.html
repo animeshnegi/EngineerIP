@@ -501,8 +501,7 @@
   <Hr>
   </Hr>
 
-  <!-- Contact Section -->
-  <section id="contact" class="contact section">
+<section id="contact" class="contact section">
 
     <!-- Section Title -->
     <div class="container section-title" data-aos="fade-up">
@@ -546,7 +545,7 @@
         </div>
 
         <div class="col-lg-8">
-          <form action="/query" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
+          <form action="/query" id="contact" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
             <div class="row gy-4">
 
               <div class="col-md-6">
@@ -566,29 +565,43 @@
                   required=""></textarea>
               </div>
 
-              <div class="row align-items-center">
-                <!-- Left side: reCAPTCHA -->
-                <div class="col-lg-6">
-                  <div class="g-recaptcha" data-sitekey="6LeAtKMrAAAAAJ_ceR-60Ap1WX4H_wwTpwr78xOW"></div>
+              <div class="row align-items-center mt-3">
+
+                <div class="col-lg-8">
+                  <fieldset>
+                    <div style="display:flex; align-items:center; gap:10px;">
+
+                      <label for="math_verification" style="font-size:22px; white-space:nowrap; font-weight:bold;">
+                        7 + 5 =
+                      </label>
+
+
+                      <input type="number" name="math_verification" id="math_verification" placeholder="Answer ?"
+                        required min="0" max="99"
+                        oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
+                        style="width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
+
+                      <p style="font-size: 12px; color: #6b6b6b;">🤖 You're not a robot, right?</p>
+
+                    </div>
+                  </fieldset>
                 </div>
 
+
+                <!-- Simple Math Verification -->
+
+
                 <!-- Right side: Button -->
-                <div class="col-lg-6 text-end">
+                <div class="col-lg-4 text-end">
                   <div class="loading">Loading</div>
                   <div class="error-message"></div>
                   <div class="sent-message"></div>
-                  <button class="end btn btn-primary" type="submit">Send Message</button>
+                  <button class="end btn btn-primary" type="submit" id="submitBtn" type="submit" >Send
+                    Message</button>
                 </div>
               </div>
 
-              <style>
-                .g-recaptcha {
-                  transform: scale(0.85);
-                  /* Shrink slightly */
-                  transform-origin: 0 0;
-                  /* Keep aligned to top-left */
-                }
-              </style>
+
 
             </div>
           </form>
@@ -599,10 +612,6 @@
     </div>
 
   </section>
-
-
-</section>
-
 
 
 

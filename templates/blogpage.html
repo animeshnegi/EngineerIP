@@ -224,116 +224,117 @@
     </section>
 
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact section bg-light">
+   <section id="contact" class="contact section">
 
-        <!-- Section Title -->
-        <div class="container section-title" data-aos="fade-up">
+    <!-- Section Title -->
+    <div class="container section-title" data-aos="fade-up">
+      <h2>Contact</h2>
+      <p>Contact Us</p>
+    </div><!-- End Section Title -->
 
-            <h2>Contact</h2>
-            <p>Contact Us</p>
-        </div><!-- End Section Title -->
+    <div class="container" data-aos="fade" data-aos-delay="100">
 
-        <div class="container" data-aos="fade" data-aos-delay="100">
+      <div class="row gy-4">
 
+        <div class="col-lg-4">
+          <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="200">
+            <i class="bi bi-geo-alt flex-shrink-0"></i>
+            <div>
+              <h3>Address</h3>
+              <p>1207 Delaware Ave #759<br>
+                Wilmington DE 19806</p>
+            </div>
+          </div>
+
+          <a href="tel:+1-302-302-1650" class="info-item d-flex" data-aos="fade-up" data-aos-delay="300"
+            style="text-decoration: none; color: inherit;">
+            <i class="bi bi-telephone flex-shrink-0"></i>
+            <div>
+              <h3>Call Us</h3>
+              <p>+1-302-302-1650</p>
+            </div>
+          </a>
+
+          <a href="mailto:mail@engineerip.com" class="info-item d-flex" data-aos="fade-up" data-aos-delay="400"
+            style="text-decoration: none; color: inherit;">
+            <i class="bi bi-envelope flex-shrink-0"></i>
+            <div>
+              <h3>Email Us</h3>
+              <p>mail@engineerip.com</p>
+            </div>
+          </a>
+
+
+        </div>
+
+        <div class="col-lg-8">
+          <form action="/query" id="contact" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
             <div class="row gy-4">
 
-                <div class="col-lg-4">
-                    <div class="info-item d-flex" data-aos="fade-up" data-aos-delay="200">
-                        <i class="bi bi-geo-alt flex-shrink-0"></i>
-                        <div>
-                            <h3>Address</h3>
-                            <p>1207 Delaware Ave #759<br>
-                                Wilmington DE 19806</p>
-                        </div>
-                    </div>
+              <div class="col-md-6">
+                <input type="text" name="name" id="name" class="form-control" placeholder="Your Name" required="">
+              </div>
 
-                    <a href="tel:+1-302-302-1650" class="info-item d-flex" data-aos="fade-up" data-aos-delay="300"
-                        style="text-decoration: none; color: inherit;">
-                        <i class="bi bi-telephone flex-shrink-0"></i>
-                        <div>
-                            <h3>Call Us</h3>
-                            <p>+1-302-302-1650</p>
-                        </div>
-                    </a>
+              <div class="col-md-6 ">
+                <input type="email" class="form-control" name="email" id="email" placeholder="Your Email" required="">
+              </div>
 
-                    <a href="mailto:mail@engineerip.com" class="info-item d-flex" data-aos="fade-up"
-                        data-aos-delay="400" style="text-decoration: none; color: inherit;">
-                        <i class="bi bi-envelope flex-shrink-0"></i>
-                        <div>
-                            <h3>Email Us</h3>
-                            <p>mail@engineerip.com</p>
-                        </div>
-                    </a>
+              <div class="col-md-12">
+                <input type="text" class="form-control" name="subject" id="subject" placeholder="Subject" required="">
+              </div>
 
+              <div class="col-md-12">
+                <textarea class="form-control" name="message" id="message" rows="6" placeholder="Message"
+                  required=""></textarea>
+              </div>
 
-                </div>
+              <div class="row align-items-center mt-3">
 
                 <div class="col-lg-8">
-                    <form action="/query" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
-                        <div class="row gy-4">
+                  <fieldset>
+                    <div style="display:flex; align-items:center; gap:10px;">
 
-                            <div class="col-md-6">
-                                <input type="text" name="name" id="name" class="form-control" placeholder="Your Name"
-                                    required="">
-                            </div>
+                      <label for="math_verification" style="font-size:22px; white-space:nowrap; font-weight:bold;">
+                        7 + 5 =
+                      </label>
 
-                            <div class="col-md-6 ">
-                                <input type="email" class="form-control" name="email" id="email"
-                                    placeholder="Your Email" required="">
-                            </div>
 
-                            <div class="col-md-12">
-                                <input type="text" class="form-control" name="subject" id="subject"
-                                    placeholder="Subject" required="">
-                            </div>
+                      <input type="number" name="math_verification" id="math_verification" placeholder="Answer ?"
+                        required min="0" max="99"
+                        oninput="if(this.value.length > 2) this.value = this.value.slice(0,2);"
+                        style="width:120px; padding:8px; border:1px solid #ddd; border-radius:4px;">
 
-                            <div class="col-md-12">
-                                <textarea class="form-control" name="message" id="message" rows="6"
-                                    placeholder="Message" required=""></textarea>
-                            </div>
+                      <p style="font-size: 12px; color: #6b6b6b;">🤖 You're not a robot, right?</p>
 
-              <div class="row align-items-center">
-                <!-- Left side: reCAPTCHA -->
-                <div class="col-lg-6">
-                  <div class="g-recaptcha" data-sitekey="6LeAtKMrAAAAAJ_ceR-60Ap1WX4H_wwTpwr78xOW"
-                    data-callback="enableSubmit"></div>
+                    </div>
+                  </fieldset>
                 </div>
 
+
+                <!-- Simple Math Verification -->
+
+
                 <!-- Right side: Button -->
-                <div class="col-lg-6 text-end">
+                <div class="col-lg-4 text-end">
                   <div class="loading">Loading</div>
                   <div class="error-message"></div>
                   <div class="sent-message"></div>
-                  <button class="end btn btn-primary" type="submit" id="submitBtn" type="submit" disabled>Send
+                  <button class="end btn btn-primary" type="submit" id="submitBtn" type="submit" >Send
                     Message</button>
                 </div>
               </div>
 
-              <style>
-                .g-recaptcha {
-                  transform: scale(0.85);
-                  /* Shrink slightly */
-                  transform-origin: 0 0;
-                  /* Keep aligned to top-left */
-                }
-              </style>
-              <script>
-                function enableSubmit() {
-                  document.getElementById("submitBtn").disabled = false;
-                }
 
-              </script>
-
-                        </div>
-                    </form>
-                </div><!-- End Contact Form -->
 
             </div>
+          </form>
+        </div><!-- End Contact Form -->
 
-        </div>
+      </div>
 
-    </section>
+    </div>
+
+  </section>
 
 
 

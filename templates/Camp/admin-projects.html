@@ -13,6 +13,11 @@
                 <div class="header-subtitle">Welcome back, {{ Admin_name }}! Manage all client projects from here.</div>
             </div>
             <div class="header-actions">
+
+                <button class="btn btn-light" style="height: 40px;" data-bs-toggle="modal"
+                    data-bs-target="#newProjectModal">
+                    <i class="fas fa-plus me-2"></i>New Project
+                </button>
                 <div class="search-container d-none d-md-block">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" class="search-input" placeholder="Search projects..." id="searchInput"
@@ -26,6 +31,106 @@
         </div>
     </div>
 </div>
+
+
+<div class="modal fade" id="newProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newProjectForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Project Name *</label>
+                                <input type="text" class="form-control" name="name" required
+                                    placeholder="Enter project name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Client Name *</label>
+                                <input type="text" class="form-control" name="client_id" required
+                                    list="clientDatalist" id="clientNameInput"
+                                    placeholder="Select client or enter new client name">
+                                <datalist id="clientDatalist"></datalist>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" name="description" rows="3"
+                                    placeholder="Brief description of the project"></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Due Date *</label>
+                                        <input type="date" class="form-control" name="due_date" required
+                                            min="{{ today.strftime('%Y-%m-%d') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Priority</label>
+                                        <select class="form-select" name="priority">
+                                            <option value="normal">Normal</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Category (Optional)</label>
+                                <select class="form-select" name="category">
+                                    <option value="design">Drawings</option>
+                                    <option value="development">Search</option>
+                                    <option value="marketing">Office Action</option>
+                                    <option value="research">Landscape</option>
+                                    <option value="research">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Budget (Optional)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" name="budget" placeholder="0.00"
+                                        step="0.01">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Initial Files (Optional)</label>
+                                <div class="border rounded p-3 text-center">
+                                    <i class="fas fa-cloud-upload-alt fa-2x text-muted mb-2"></i>
+                                    <p class="small text-muted mb-2">Drop files or click to browse</p>
+                                    <input type="file" class="form-control" name="files" multiple style="display: none;"
+                                        id="projectFiles">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                        onclick="document.getElementById('projectFiles').click()">
+                                        Browse Files
+                                    </button>
+                                    <!-- Display area for selected files -->
+                                    <div id="selectedFiles" class="mt-3" style="display: none;">
+                                        <div id="fileList" class="text-start"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createProject()">
+                    <i class="fas fa-plus me-2"></i>Create Project
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <div class="container-fluid py-4">
     <!-- Statistics Cards -->
@@ -674,6 +779,8 @@
             // Update UI
             updateFilterCounts();
             updateStatisticsDisplay();
+            populateClientDatalist();
+
 
         } catch (error) {
             console.error('Error loading initial data:', error);
@@ -2305,6 +2412,7 @@
 
             if (data.success) {
                 allClients = data.clients;
+
             }
         } catch (error) {
             console.error('Error loading clients:', error);
@@ -2341,6 +2449,22 @@
         const modal = new bootstrap.Modal(document.getElementById('clientsModal'));
         modal.show();
     }
+
+
+    function populateClientDatalist() {
+        const datalist = document.getElementById('clientDatalist');
+        if (!datalist) return;
+
+        if (!allClients || allClients.length === 0) {
+            datalist.innerHTML = '';
+            return;
+        }
+
+        datalist.innerHTML = allClients.map(client =>
+            `<option value="${client.id}">${client.name} (${client.email})</option>`
+        ).join('');
+    }
+
 
     async function viewClientProjects(clientId) {
         try {
@@ -2510,5 +2634,235 @@
             this.remove();
         });
     }
+
+
+  // Create project function
+
+let currentFiles = [];
+// Create project function
+    async function createProject() {
+        const submitBtn = document.querySelector('button[onclick="createProject()"]');
+        if (submitBtn.disabled) {
+            console.log("Already submitting, please wait...");
+            return;
+        }
+
+        try {
+            // Show loading state
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData();
+
+            // Get form values manually
+            const form = document.getElementById('newProjectForm');
+            const name = form.querySelector('[name="name"]').value;
+            const client_id = form.querySelector('[name="client_id"]').value;
+            const description = form.querySelector('[name="description"]').value;
+            const due_date = form.querySelector('[name="due_date"]').value;
+            const category = form.querySelector('[name="category"]').value;
+            const budget = form.querySelector('[name="budget"]').value;
+            const priority = form.querySelector('[name="priority"]').value;
+
+            // Append form data
+            formData.append("action", "create_project");
+            formData.append("name", name);
+            formData.append("client_id", client_id);
+            formData.append("description", description);
+            formData.append("due_date", due_date);
+            formData.append("category", category);
+            formData.append("budget", budget);
+            formData.append("priority", priority);
+
+            // Append files
+            if (currentFiles.length > 0) {
+                currentFiles.forEach((file, index) => {
+                    formData.append("files[]", file);
+                });
+            }
+
+            console.log(`Sending ${currentFiles.length} files to server`);
+
+            const response = await fetch('/admin/add-new-project', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Close modal
+                const modalEl = document.getElementById('newProjectModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+
+                // Reset form and files
+                form.reset();
+                currentFiles = [];
+                updateFileDisplay();
+
+                // Show success message
+                showToast('success', 'Project created successfully!');
+
+                // Reload page after delay
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast('error', 'Error: ' + result.error);
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            showToast('error', 'Failed to create project');
+        } finally {
+            // Restore button state
+            const submitBtn = document.querySelector('button[onclick="createProject()"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+    }
+
+    // File handling functions
+    function updateFileDisplay() {
+        const selectedFilesDiv = document.getElementById('selectedFiles');
+        const fileListDiv = document.getElementById('fileList');
+
+        if (currentFiles.length > 0) {
+            if (currentFiles.length === 1) {
+                fileListDiv.innerHTML = `
+                <div class="alert alert-info p-2 mb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-file me-2"></i>
+                            <span>Selected: <strong>${currentFiles[0].name}</strong></span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                onclick="removeFile(0)" title="Remove file">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            } else {
+                fileListDiv.innerHTML = `
+                <div class="alert alert-info p-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-folder-open me-2"></i>
+                            <span><strong>${currentFiles.length} files selected:</strong></span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                onclick="removeAllFiles()" title="Remove all files">
+                            <i class="fas fa-times-circle"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        ${currentFiles.map((file, index) => `
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file text-muted me-2" style="font-size: 0.8rem;"></i>
+                                    <div>
+                                        <div class="text-truncate" style="max-width: 250px;">${file.name}</div>
+                                        <small class="text-muted">${formatFileSize(file.size)}</small>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" 
+                                        onclick="removeFile(${index})" title="Remove this file">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            }
+
+            selectedFilesDiv.style.display = 'block';
+        } else {
+            selectedFilesDiv.style.display = 'none';
+        }
+
+        updateFileInput();
+    }
+
+    function removeFile(index) {
+        currentFiles.splice(index, 1);
+        updateFileDisplay();
+    }
+
+    function removeAllFiles() {
+        currentFiles = [];
+        updateFileDisplay();
+    }
+
+    function updateFileInput() {
+        const fileInput = document.getElementById('projectFiles');
+        const dataTransfer = new DataTransfer();
+
+        currentFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+
+        fileInput.files = dataTransfer.files;
+    }
+
+    // Handle file input change
+    document.getElementById('projectFiles').addEventListener('change', function (e) {
+        const newFiles = Array.from(e.target.files);
+
+        newFiles.forEach(newFile => {
+            const exists = currentFiles.some(existingFile =>
+                existingFile.name === newFile.name &&
+                existingFile.size === newFile.size &&
+                existingFile.lastModified === newFile.lastModified
+            );
+
+            if (!exists) {
+                currentFiles.push(newFile);
+            }
+        });
+
+        updateFileDisplay();
+    });
+
+
+
+    //FILES Drop functions
+    const dropZone = document.querySelector('.border.rounded.p-3');
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-primary', 'bg-light');
+    });
+
+    dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-primary', 'bg-light');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-primary', 'bg-light');
+        
+        const newFiles = Array.from(e.dataTransfer.files);
+        
+        newFiles.forEach(newFile => {
+            const exists = currentFiles.some(existingFile =>
+                existingFile.name === newFile.name &&
+                existingFile.size === newFile.size &&
+                existingFile.lastModified === newFile.lastModified
+            );
+
+            if (!exists) {
+                currentFiles.push(newFile);
+            }
+        });
+        
+        updateFileDisplay();
+    });
+
 </script>
 {% endblock %}

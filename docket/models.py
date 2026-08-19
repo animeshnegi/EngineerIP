@@ -622,3 +622,36 @@ class ProjectNotification(db.Model):
 
 
 
+class SharedFile(db.Model):
+    __tablename__ = 'shared_files'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)  # NULL for guests
+    session_id = Column(String(100), nullable=True, index=True)  # For guest users
+    filename = Column(String(255), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    file_type = Column(String(50), default='other')
+    category = Column(String(50), default='other')
+    description = Column(Text)
+    file_size = Column(Integer, default=0)
+    share_token = Column(String(50), unique=True, nullable=False, index=True)
+    share_url = Column(String(500))
+    download_count = Column(Integer, default=0)
+    is_deleted = Column(Boolean, default=False)
+    uploader_ip = Column(String(50))
+    user_agent = Column(String(500))
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    last_accessed = Column(DateTime)
+    
+    # Relationships
+    user = relationship("User", backref="shared_files")
+    
+    __table_args__ = (
+        Index('idx_shared_files_user_id', 'user_id'),
+        Index('idx_shared_files_session_id', 'session_id'),
+        Index('idx_shared_files_share_token', 'share_token'),
+        Index('idx_shared_files_created_at', 'created_at'),
+        Index('idx_shared_files_is_deleted', 'is_deleted'),
+    )
