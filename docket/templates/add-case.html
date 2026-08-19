@@ -1042,13 +1042,10 @@
         setupFileUpload('tm');
         setupFileUpload('patent');
 
-        // Patent form submission
+        // Patent data extraction is intentionally not enabled yet.
         document.getElementById('patent-form').addEventListener('submit', function (e) {
             e.preventDefault();
-            console.log("Patent form submitted");
-            showProgressSection(true); // Reset for new job
-            const formData = new FormData(this);
-            submitFormData(formData, 'patent');
+            showError('Patent data extraction is coming soon. Trademark lookups are available now.');
         });
 
         // Trademark form submission

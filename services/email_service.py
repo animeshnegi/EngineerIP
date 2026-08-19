@@ -17,6 +17,9 @@ class EmailService:
 
     def _send_email_via_api(self, payload):
         """Core method to handle API communication"""
+        if not self.api_key or not self.base_url:
+            self.logger.error('Email API is not configured')
+            return False
         try:
             response = requests.post(
                 self.base_url,
@@ -86,6 +89,21 @@ class EmailService:
             "isTransactional": True
         }
 
+        return self._send_email_via_api(payload)
+
+    def send_docket_notification(self, recipient, subject, html_body):
+        """Send a deadline/status email through the configured provider."""
+        if not recipient:
+            self.logger.warning('Docket notification skipped: recipient is empty')
+            return False
+        payload = {
+            "apikey": self.api_key,
+            "subject": subject,
+            "from": self.default_sender,
+            "to": recipient,
+            "bodyHtml": html_body,
+            "isTransactional": True,
+        }
         return self._send_email_via_api(payload)
 
     # Add other email methods (campaign emails, etc) here

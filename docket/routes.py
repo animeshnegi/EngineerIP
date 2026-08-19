@@ -3,18 +3,13 @@ from docket.models import db, User, UploadedFile, FileRecord, FileType, UploadSt
 from datetime import datetime, timedelta, date
 import holidays
 import time
-import requests
 import hashlib
 import secrets
 import re
 from werkzeug.utils import secure_filename
 from sqlalchemy import or_, and_, func
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 import uuid
 import os
@@ -23,6 +18,9 @@ import io
 import zipfile
 from pathlib import Path
 from sqlalchemy import desc
+from docket.trademark_service import sync_trademark_case
+from docket.tsdr_client import TSDRAPIClient
+from services.email_service import EmailService
 
 
 
@@ -328,101 +326,40 @@ def process_uploaded_file(file, file_type, user_id):
         raise
 
 
-# Scraping Functions
-def setup_headless_driver():
-    """Setup completely headless Chrome driver"""
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-images")
-    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    options.add_argument("--window-size=1920,1080")
-
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option('useAutomationExtension', False)
-
-    driver = webdriver.Chrome(options=options)
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-    return driver
+# USPTO data extraction
+def _tsdr_client() -> TSDRAPIClient:
+    return TSDRAPIClient(
+        current_app.config.get('TSDR_API_KEY', ''),
+        save_xml=current_app.config.get('TSDR_SAVE_XML', False),
+        xml_output_dir=current_app.config.get('TSDR_XML_FOLDER', 'uploads/tsdr_xml'),
+        max_requests=current_app.config.get('TSDR_MAX_REQUESTS_PER_MINUTE', 60),
+        window_seconds=current_app.config.get('TSDR_RATE_WINDOW_SECONDS', 60),
+        timeout=current_app.config.get('TSDR_REQUEST_TIMEOUT', 15),
+        max_retries=current_app.config.get('TSDR_MAX_RETRIES', 3),
+    )
 
 def scrape_trademark_data(tm_number):
-    """Scrape single trademark data"""
-    print(f"DEBUG: Starting scrape for TM {tm_number}")
-    driver = setup_headless_driver()
-    try:
-        url = f"https://tsdr.uspto.gov/#caseNumber={tm_number}&caseSearchType=US_APPLICATION&caseType=DEFAULT&searchType=statusSearch"
-        print(f"DEBUG: Loading URL: {url}")
-        driver.get(url)
-
-        # Wait for dynamic content
-        print("DEBUG: Waiting for page to load...")
-        WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.XPATH, "//div[@class='key' and contains(text(), 'Status:')]"))
-        )
-
-        time.sleep(1)
-
-        # Extract data
-        print("DEBUG: Extracting data...")
-        data = {
-            'TM Number': tm_number,
-            'Mark': get_text_by_xpath(driver, "//div[@class='key' and contains(text(), 'Mark:')]/following-sibling::div[1]"),
-            'Application Filing Date': get_text_by_xpath(driver, "//div[@class='key' and contains(text(), 'Application Filing Date:')]/following-sibling::div[1]"),
-            'Status Date': get_text_by_xpath(driver, "//div[@class='key' and contains(text(), 'Status Date:')]/following-sibling::div[1]"),
-            'Register': get_text_by_xpath(driver, "//div[@class='key' and contains(text(), 'Register:')]/following-sibling::div[1]"),
-            'Mark Type': get_text_by_xpath(driver, "//div[@class='key' and contains(text(), 'Mark Type:')]/following-sibling::div[1]"),
-            'Owner Name': get_text_by_xpath(driver, "//div[contains(text(),'Owner Name:')]/following-sibling::div[1]"),
-            'Owner Address': get_text_by_xpath(driver, "//div[contains(text(),'Owner Address:')]/following-sibling::div[1]", join_lines=True),
-            'Entity': get_text_by_xpath(driver, "//div[contains(text(),'Legal Entity Type:')]/following-sibling::div[1]"),
-            'Attorney Name': get_text_by_xpath(driver, "//div[contains(text(),'Attorney Name:')]/following-sibling::div[1]"),
-            'Status': get_text_by_xpath(driver, "//div[@class='key' and contains(text(), 'Status:')]/following-sibling::div[1]"),
-            'scraped_at': datetime.utcnow().isoformat()
-        }
-
-        print(f"DEBUG: Successfully scraped data for {tm_number}")
-        return data
-
-    except Exception as e:
-        print(f"DEBUG: Error scraping {tm_number}: {str(e)}")
-        return {'error': str(e), 'TM Number': tm_number}
-    finally:
-        driver.quit()
-        print("DEBUG: Driver closed")
-
-def get_text_by_xpath(driver, xpath, join_lines=False):
-    """Helper function to get text by XPath"""
-    try:
-        elements = driver.find_elements(By.XPATH, xpath)
-        if not elements:
-            return ""
-
-        if join_lines:
-            lines = [element.get_attribute('textContent').strip() for element in elements if element.get_attribute('textContent').strip()]
-            return ', '.join(lines) if lines else ""
-        else:
-            text = elements[0].get_attribute('textContent').strip()
-            return text if text else ""
-    except Exception:
-        return ""
+    """Legacy single-record helper backed by the TSDR API client."""
+    result = _tsdr_client().get_trademark_details(tm_number)
+    if not result.get('success'):
+        return {'error': result.get('error', 'Trademark lookup failed'), 'serial_number': tm_number}
+    return result.get('data', {})
 
 def scrape_patent_data(patent_number):
-    """Scrape single patent data - placeholder for patent scraping"""
-    # This would be your patent scraping logic
-    time.sleep(0.5)  # Simulate processing
+    """Patent extraction is intentionally not enabled yet."""
     return {
-        'Patent Number': patent_number,
-        'Title': f"Patent {patent_number}",
-        'Status': 'Pending',
-        'scraped_at': datetime.utcnow().isoformat()
+        'error': 'Patent data extraction is coming soon.',
+        'patent_number': str(patent_number),
     }
 
 # Background Processing Functions
-def _process_uploaded_file_background(app, uploaded_file_id, processor, user_id=None):
-    """Run one upload worker with a real app/database context."""
+def _process_uploaded_file_background(app, uploaded_file_id, processor, user_id=None, result_handler=None, max_workers=1):
+    """Run one upload worker with a real app/database context.
+
+    API requests may run concurrently, but all ORM writes happen in this
+    application-context thread.  This keeps SQLAlchemy sessions thread-safe
+    while allowing TSDR lookups to use up to ten workers.
+    """
     with app.app_context():
         try:
             uploaded_file = UploadedFile.query.get(uploaded_file_id)
@@ -434,21 +371,25 @@ def _process_uploaded_file_background(app, uploaded_file_id, processor, user_id=
             uploaded_file.processed_records = 0
             uploaded_file.failed_records = 0
             db.session.commit()
-
             records = FileRecord.query.filter_by(
                 uploaded_file_id=uploaded_file_id,
             ).order_by(FileRecord.id.asc()).all()
+            worker_count = max(1, min(int(max_workers or 1), 10))
             delay = max(0.0, float(current_app.config.get('DOCKET_RECORD_DELAY_SECONDS', 0)))
 
-            for index, record in enumerate(records, start=1):
+            def handle_result(record, result, error=None):
+                nonlocal uploaded_file
                 try:
-                    scraped_data = processor(record.record_number)
-                    if isinstance(scraped_data, dict) and scraped_data.get('error'):
-                        raise RuntimeError(str(scraped_data['error']))
-                    record.scraped_data = json.dumps(scraped_data, default=str)
+                    if error:
+                        raise error
+                    if isinstance(result, dict) and result.get('error'):
+                        raise RuntimeError(str(result['error']))
+                    record.scraped_data = json.dumps(result, default=str)
                     record.status = UploadStatus.COMPLETED
                     record.error_message = None
                     record.processed_date = datetime.utcnow()
+                    if result_handler:
+                        record.case_id = result_handler(user_id, result)
                 except Exception as exc:
                     record.status = UploadStatus.FAILED
                     record.error_message = str(exc)
@@ -459,8 +400,7 @@ def _process_uploaded_file_background(app, uploaded_file_id, processor, user_id=
                         record.record_number,
                         exc,
                     )
-
-                uploaded_file.processed_records = index
+                uploaded_file.processed_records += 1
                 uploaded_file.failed_records = FileRecord.query.filter_by(
                     uploaded_file_id=uploaded_file_id,
                     status=UploadStatus.FAILED,
@@ -468,6 +408,26 @@ def _process_uploaded_file_background(app, uploaded_file_id, processor, user_id=
                 db.session.commit()
                 if delay:
                     time.sleep(delay)
+
+            if worker_count == 1:
+                for record in records:
+                    try:
+                        result = processor(record.record_number)
+                        handle_result(record, result)
+                    except Exception as exc:
+                        handle_result(record, None, exc)
+            else:
+                with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                    future_map = {
+                        executor.submit(processor, record.record_number): record
+                        for record in records
+                    }
+                    for future in as_completed(future_map):
+                        record = future_map[future]
+                        try:
+                            handle_result(record, future.result())
+                        except Exception as exc:
+                            handle_result(record, None, exc)
 
             uploaded_file = UploadedFile.query.get(uploaded_file_id)
             if uploaded_file:
@@ -494,22 +454,50 @@ def _process_uploaded_file_background(app, uploaded_file_id, processor, user_id=
 
 
 def process_trademark_file_background(app, uploaded_file_id, user_id):
-    return _process_uploaded_file_background(
-        app,
-        uploaded_file_id,
-        scrape_trademark_data,
-        user_id=user_id,
-    )
+    """Fetch trademark records from TSDR and upsert Cases/deadlines."""
+    with app.app_context():
+        client = TSDRAPIClient(
+            app.config.get('TSDR_API_KEY', ''),
+            save_xml=app.config.get('TSDR_SAVE_XML', False),
+            xml_output_dir=app.config.get('TSDR_XML_FOLDER', 'uploads/tsdr_xml'),
+            max_requests=app.config.get('TSDR_MAX_REQUESTS_PER_MINUTE', 60),
+            window_seconds=app.config.get('TSDR_RATE_WINDOW_SECONDS', 60),
+            timeout=app.config.get('TSDR_REQUEST_TIMEOUT', 15),
+            max_retries=app.config.get('TSDR_MAX_RETRIES', 3),
+        )
+
+        def fetch(serial_number):
+            result = client.get_trademark_details(serial_number)
+            if not result.get('success'):
+                return {
+                    'error': result.get('error', 'Trademark lookup failed'),
+                    'serial_number': serial_number,
+                    'status_code': result.get('status_code'),
+                }
+            data = dict(result.get('data') or {})
+            data['serial_number'] = data.get('serial_number') or result.get('serial_number')
+            data['api_status_code'] = result.get('status_code')
+            data['checked_at'] = datetime.utcnow().isoformat()
+            return data
+
+        return _process_uploaded_file_background(
+            app,
+            uploaded_file_id,
+            fetch,
+            user_id=user_id,
+            result_handler=sync_trademark_case,
+            max_workers=app.config.get('TSDR_MAX_WORKERS', 10),
+        )
 
 
 def process_patent_file_background(app, uploaded_file_id, user_id):
-    # Use the passed app object.  Accessing current_app before entering an
-    # application context is invalid in a worker thread.
+    """Leave patent records clearly marked as coming soon, never fake data."""
     return _process_uploaded_file_background(
         app,
         uploaded_file_id,
         scrape_patent_data,
         user_id=user_id,
+        max_workers=1,
     )
 
 
@@ -1830,7 +1818,7 @@ def upload_project_file(project_id):
         file.seek(0)
         if file_size > 30 * 1024 * 1024:
             return jsonify({'success': False, 'error': 'File too large. Maximum size is 30MB'}), 400
-        
+
         # Create secure filename
         filename = secure_filename(file.filename)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -2154,6 +2142,16 @@ def _serialize_deadline(deadline):
     }
 
 
+def _case_uspto_data(case):
+    if not case.uspto_data:
+        return {}
+    try:
+        value = json.loads(case.uspto_data)
+        return value if isinstance(value, dict) else {}
+    except (TypeError, json.JSONDecodeError):
+        return {}
+
+
 def _serialize_case(case, include_counts=True):
     payload = {
         'id': case.id,
@@ -2179,6 +2177,8 @@ def _serialize_case(case, include_counts=True):
         'actual_fees': case.actual_fees or 0,
         'created_at': _iso(case.created_at),
         'updated_at': _iso(case.updated_at),
+        'trademark_data': _case_uspto_data(case) if _enum_value(case.type) == 'trademark' else {},
+        'coming_soon': _enum_value(case.type) == 'patent',
     }
     if include_counts:
         payload['deadline_count'] = Deadline.query.filter_by(case_id=case.id).count()
@@ -2200,6 +2200,19 @@ def get_docket_dashboard():
     user_id = get_current_user_id()
     today = date.today()
     upcoming_limit = today + timedelta(days=30)
+    user_case_ids = db.session.query(Case.id).filter(Case.user_id == user_id)
+    Deadline.query.filter(
+        Deadline.case_id.in_(user_case_ids),
+        Deadline.status == 'pending',
+        Deadline.due_date < today,
+    ).update({'status': 'overdue'}, synchronize_session=False)
+    Deadline.query.filter(
+        Deadline.case_id.in_(user_case_ids),
+        Deadline.status == 'overdue',
+        Deadline.due_date >= today,
+    ).update({'status': 'pending'}, synchronize_session=False)
+    db.session.commit()
+
     active_statuses = [
         CaseStatus.DRAFT,
         CaseStatus.FILED,
@@ -2449,33 +2462,107 @@ def update_case_status(case_id, new_status):
         status_description='Status updated by docket automation.',
     ))
     db.session.commit()
+    send_status_change_notification(case, old_status, selected_status.value)
     return True
 
 
 def send_due_date_notifications():
-    """Return pending deadlines that are due for notification.
-
-    Email delivery can be wired to the configured email service without
-    bypassing the SQLAlchemy models used by the rest of the docket module.
-    """
+    """Send configured deadline reminders and record every attempt."""
     today = date.today()
-    deadlines = Deadline.query.join(Case).filter(
-        Deadline.status == 'pending',
+    now = datetime.utcnow()
+    deadlines = Deadline.query.join(Case).join(User, User.id == Case.user_id).filter(
+        Deadline.status.in_(['pending', 'extended']),
         Deadline.due_date >= today,
-        Deadline.due_date <= today + timedelta(days=30),
+        Deadline.due_date <= today + timedelta(days=180),
+        User.email_notifications.is_(True),
     ).all()
-    return len(deadlines)
+    sent = 0
+    skipped = 0
+    failed = 0
+    email_service = EmailService()
+
+    for deadline in deadlines:
+        user = deadline.case.user if deadline.case else None
+        if not user or not user.email:
+            skipped += 1
+            continue
+        try:
+            preferences = user.get_notification_preferences_list()
+        except (AttributeError, TypeError, ValueError):
+            preferences = [30, 14, 7, 1]
+        days_until = (deadline.due_date - today).days
+        if days_until not in preferences:
+            skipped += 1
+            continue
+        day_start = datetime.combine(today, datetime.min.time())
+        already_logged = NotificationLog.query.filter(
+            NotificationLog.deadline_id == deadline.id,
+            NotificationLog.user_id == user.id,
+            NotificationLog.notification_type == NotificationType.DEADLINE_REMINDER,
+            NotificationLog.sent_at >= day_start,
+        ).first()
+        if already_logged:
+            skipped += 1
+            continue
+
+        subject = f"Deadline reminder: {deadline.title}"
+        html_body = (
+            f"<h2>Upcoming IP deadline</h2>"
+            f"<p><strong>Case:</strong> {deadline.case.title}</p>"
+            f"<p><strong>Reference:</strong> {deadline.case.case_number}</p>"
+            f"<p><strong>Deadline:</strong> {deadline.title}</p>"
+            f"<p><strong>Due:</strong> {deadline.due_date.isoformat()} ({days_until} days)</p>"
+            f"<p>Please review DocketTrack and take the required action.</p>"
+        )
+        delivered = email_service.send_docket_notification(user.email, subject, html_body)
+        log = NotificationLog(
+            user_id=user.id,
+            case_id=deadline.case_id,
+            deadline_id=deadline.id,
+            notification_type=NotificationType.DEADLINE_REMINDER,
+            channel='email',
+            recipient=user.email,
+            subject=subject,
+            message=html_body,
+            status='sent' if delivered else 'failed',
+            error_message=None if delivered else 'Email provider rejected or was not configured.',
+            sent_at=now,
+        )
+        db.session.add(log)
+        if delivered:
+            deadline.last_notification_sent = now
+            sent += 1
+        else:
+            failed += 1
+    db.session.commit()
+    return {'sent': sent, 'skipped': skipped, 'failed': failed}
 
 
 def send_status_change_notification(case, old_status, new_status):
-    """Log a status change; the notification provider may be added later."""
-    current_app.logger.info(
-        'Case %s changed from %s to %s',
-        case.get('case_number') if isinstance(case, dict) else case.case_number,
-        old_status,
-        new_status,
+    """Send and log a status-change notification when possible."""
+    case_number = case.get('case_number') if isinstance(case, dict) else case.case_number
+    current_app.logger.info('Case %s changed from %s to %s', case_number, old_status, new_status)
+    if isinstance(case, dict) or not getattr(case, 'user', None) or not case.user.email:
+        return False
+    subject = f"Case status updated: {case.title}"
+    body = (
+        f"<h2>Case status updated</h2><p><strong>{case.title}</strong> ({case.case_number})</p>"
+        f"<p>{old_status} → {new_status}</p>"
     )
-    return False
+    delivered = EmailService().send_docket_notification(case.user.email, subject, body)
+    db.session.add(NotificationLog(
+        user_id=case.user_id,
+        case_id=case.id,
+        notification_type=NotificationType.STATUS_CHANGE,
+        channel='email',
+        recipient=case.user.email,
+        subject=subject,
+        message=body,
+        status='sent' if delivered else 'failed',
+        error_message=None if delivered else 'Email provider rejected or was not configured.',
+    ))
+    db.session.commit()
+    return delivered
 
 
 @docket_bp.route('/profile')

@@ -159,6 +159,11 @@
       const item = payload.case;
       $('#caseDetailsTitle').textContent = item.title || item.case_number;
       $('#caseDetailsNumber').textContent = `${item.case_number} · ${item.application_number}`;
+      if (item.coming_soon) {
+        body.innerHTML = `<div class="text-center py-5"><div class="status-icon status-icon-success mb-3"><i class="bi bi-hourglass-split"></i></div><h3>Patent tracking is coming soon</h3><p class="text-secondary mb-0">Patent data extraction and deadline automation are being prepared. Trademark records are already available through the USPTO TSDR integration.</p></div>`;
+        return;
+      }
+      const trademark = item.trademark_data || {};
       body.innerHTML = `<div class="docket-detail-grid">
         <div class="docket-detail-item"><small>Case type</small><strong>${escapeHtml(label(item.type))}</strong></div>
         <div class="docket-detail-item"><small>Status</small><strong><span class="docket-badge ${badgeClass(item.status)}">${escapeHtml(label(item.status))}</span></strong></div>
@@ -166,12 +171,24 @@
         <div class="docket-detail-item"><small>Fee status</small><strong>${escapeHtml(label(item.fee_status))}</strong></div>
       </div>
       <div class="docket-modal-section"><h3>About this case</h3><p class="text-secondary small mb-0">${escapeHtml(item.description || 'No description has been added.')}</p></div>
+      ${renderTrademarkData(trademark)}
       <div class="docket-modal-section"><h3>Deadlines</h3><div class="docket-modal-list">${renderDetailDeadlines(payload.deadlines)}</div></div>
       <div class="docket-modal-section"><h3>Status history</h3><div class="docket-modal-list">${renderHistory(payload.status_history)}</div></div>
       <div class="docket-modal-section"><h3>Office actions</h3><div class="docket-modal-list">${renderOfficeActions(payload.office_actions)}</div></div>`;
     } catch (error) {
       body.innerHTML = `<div class="docket-empty"><i class="bi bi-exclamation-circle"></i><strong>Unable to load this case</strong><span>${escapeHtml(error.message)}</span></div>`;
     }
+  }
+
+  function renderTrademarkData(data) {
+    if (!data || !Object.keys(data).length) return '';
+    const classes = Array.isArray(data.class_numbers) ? data.class_numbers.join(', ') : (data.class_numbers || '—');
+    return `<div class="docket-modal-section"><h3>Trademark record from TSDR</h3><div class="docket-detail-grid">
+      <div class="docket-detail-item"><small>Mark</small><strong>${escapeHtml(data.mark_name || '—')}</strong></div>
+      <div class="docket-detail-item"><small>Owner</small><strong>${escapeHtml(data.owner_name || '—')}</strong></div>
+      <div class="docket-detail-item"><small>Classes</small><strong>${escapeHtml(classes)}</strong></div>
+      <div class="docket-detail-item"><small>Correspondence</small><strong>${escapeHtml(data.correspondence_email || '—')}</strong></div>
+    </div><p class="text-secondary small mb-0"><strong>Goods/services:</strong> ${escapeHtml(data.goods_services || '—')}</p></div>`;
   }
 
   function renderDetailDeadlines(items) {

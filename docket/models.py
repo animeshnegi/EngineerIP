@@ -99,11 +99,13 @@ class FileRecord(db.Model):
 
     id = Column(Integer, primary_key=True)
     uploaded_file_id = Column(Integer, ForeignKey('uploaded_files.id'), nullable=False)
+    case_id = Column(Integer, ForeignKey('cases.id'), nullable=True, index=True)
     record_number = Column(String(100), nullable=False)  # Patent/TM number
     scraped_data = Column(Text)  # JSON stored scraped data
     status = Column(Enum(UploadStatus), default=UploadStatus.UPLOADED)
     error_message = Column(Text)
     processed_date = Column(DateTime)
+    case = relationship("Case")
 
     # Add indexes for better performance
     __table_args__ = (

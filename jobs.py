@@ -39,6 +39,23 @@ def run_scheduled_campaigns() -> bool:
         return False
 
 
+def run_docket_deadline_notifications() -> bool:
+    """Run deadline reminders inside the registered Flask app context."""
+    app = _app
+    if app is None:
+        logging.getLogger(__name__).error('Deadline job skipped: Flask app is not registered')
+        return False
+    try:
+        with app.app_context():
+            from docket.routes import send_due_date_notifications
+            result = send_due_date_notifications()
+            app.logger.info('Docket reminder run complete: %s', result)
+            return True
+    except Exception:
+        app.logger.exception('Docket deadline notification job failed')
+        return False
+
+
 def generate_random_digits() -> int:
     """Small utility retained for legacy callers."""
 

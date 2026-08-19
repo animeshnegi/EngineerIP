@@ -16,6 +16,7 @@ instance/
 projects_data/*
 shared_files/shared/*
 uploads/*
+received_xml/
 static/upload/*
 static/user_data/*
 !projects_data/.gitkeep

@@ -73,6 +73,9 @@ def _ensure_compatibility_schema() -> None:
         'project_files': {
             'description': 'TEXT',
         },
+        'file_records': {
+            'case_id': 'INTEGER',
+        },
     }
     statements = []
     for table, columns in additions.items():
@@ -148,6 +151,25 @@ def create_app(config_overrides: Mapping[str, object] | None = None) -> Flask:
             "PUBLIC_BASE_URL": os.environ.get(
                 "PUBLIC_BASE_URL", file_config.get("PUBLIC_BASE_URL", "https://www.engineerip.com")
             ).rstrip("/"),
+            "TSDR_API_KEY": os.environ.get("USPTO_TSDR_API_KEY", file_config.get("TSDR_API_KEY", "")),
+            "TSDR_SAVE_XML": _as_bool(
+                os.environ.get("TSDR_SAVE_XML", file_config.get("TSDR_SAVE_XML", False))
+            ),
+            "TSDR_XML_FOLDER": _absolute_path(
+                os.environ.get("TSDR_XML_FOLDER") or file_config.get("TSDR_XML_FOLDER", "uploads/tsdr_xml"),
+                BASE_DIR / "uploads" / "tsdr_xml",
+            ),
+            "TSDR_MAX_REQUESTS_PER_MINUTE": int(
+                os.environ.get("TSDR_MAX_REQUESTS_PER_MINUTE", 60)
+            ),
+            "TSDR_RATE_WINDOW_SECONDS": int(os.environ.get("TSDR_RATE_WINDOW_SECONDS", 60)),
+            "TSDR_MAX_WORKERS": int(os.environ.get("TSDR_MAX_WORKERS", 10)),
+            "TSDR_REQUEST_TIMEOUT": int(os.environ.get("TSDR_REQUEST_TIMEOUT", 15)),
+            "TSDR_MAX_RETRIES": int(os.environ.get("TSDR_MAX_RETRIES", 3)),
+            "TRADEMARK_OFFICE_ACTION_MONTHS": int(
+                os.environ.get("TRADEMARK_OFFICE_ACTION_MONTHS", 3)
+            ),
+            "DOCKET_RECORD_DELAY_SECONDS": float(os.environ.get("DOCKET_RECORD_DELAY_SECONDS", 0)),
             "RECAPTCHA_SECRET_KEY": os.environ.get(
                 "RECAPTCHA_SECRET_KEY", file_config.get("RECAPTCHA_SECRET_KEY", "")
             ),
@@ -155,6 +177,9 @@ def create_app(config_overrides: Mapping[str, object] | None = None) -> Flask:
             "MAX_CONTENT_LENGTH": int(os.environ.get("MAX_CONTENT_LENGTH", 50 * 1024 * 1024)),
             "CAMPAIGN_INTERVAL_MINUTES": int(os.environ.get("CAMPAIGN_INTERVAL_MINUTES", 2)),
             "CAMPAIGN_SEND_DELAY_SECONDS": float(os.environ.get("CAMPAIGN_SEND_DELAY_SECONDS", 0)),
+            "DEADLINE_NOTIFICATION_INTERVAL_MINUTES": int(
+                os.environ.get("DEADLINE_NOTIFICATION_INTERVAL_MINUTES", 60)
+            ),
             "SCHEDULER_PERSISTENCE": _as_bool(os.environ.get("SCHEDULER_PERSISTENCE"), True),
             "TIMEZONE": os.environ.get("TIMEZONE", "Asia/Kolkata"),
             "SESSION_COOKIE_HTTPONLY": True,

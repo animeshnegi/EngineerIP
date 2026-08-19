@@ -274,6 +274,7 @@ body.docket-app textarea { font: inherit; }
 .docket-status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--docket-success); box-shadow: 0 0 0 5px rgba(19,155,115,.12); }
 .docket-status-dot.is-idle { background: #a6b1c1; box-shadow: 0 0 0 5px rgba(166,177,193,.15); }
 
+.docket-modal .status-icon { width: 64px; height: 64px; display: grid; place-items: center; margin-inline: auto; border-radius: 20px; color: var(--docket-primary); background: #edf1ff; font-size: 2rem; }
 .docket-modal .modal-content { overflow: hidden; border: 0; border-radius: 20px; box-shadow: 0 28px 80px rgba(15,32,67,.22); }
 .docket-modal .modal-header { padding: 22px 24px; color: #fff; border: 0; background: linear-gradient(125deg, #1d3471, #315efb); }
 .docket-modal .modal-title { font-weight: 800; }

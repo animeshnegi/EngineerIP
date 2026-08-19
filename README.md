@@ -16,7 +16,10 @@ export DATABASE_URL="mysql+pymysql://user:password@localhost/location"
 export SECRET_KEY="replace-with-a-long-random-value"
 export ELASTIC_EMAIL_API_KEY="replace-with-your-api-key"
 export PUBLIC_BASE_URL="https://www.engineerip.com"
+export USPTO_TSDR_API_KEY="replace-with-your-uspto-tsdr-key"
 ```
+
+Trademark imports use the USPTO TSDR API with a shared **60 requests per 60 seconds** limiter and up to ten concurrent workers. Retries for timeouts, HTTP 429, and 5xx responses also consume quota and use bounded backoff. Optional raw XML storage is controlled with `TSDR_SAVE_XML=1` and `TSDR_XML_FOLDER=/path/to/xml`.
 
 Run the development server:
 
@@ -30,7 +33,8 @@ The server listens on `0.0.0.0:8000` by default. Set `DISABLE_SCHEDULER=1` for t
 
 - Public patent, trademark, drawing, consultant, article, and contact pages
 - DocketTrack dashboard at `/docket/`
-- Case CSV/XLS/XLSX uploads with background processing and Excel result downloads
+- Trademark CSV/XLS/XLSX uploads with TSDR API processing, database upserts, deadline calculation, reminder emails, and Excel result downloads
+- Patent records currently show a coming-soon notice instead of fabricated data
 - Client project collaboration, messages, files, and ZIP downloads
 - Campaign datasets, templates, sequences, follow-ups, and unsubscribe handling
 

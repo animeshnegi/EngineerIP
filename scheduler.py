@@ -50,6 +50,13 @@ class CampaignScheduler:
             id="campaign_sender",
             replace_existing=True,
         )
+        scheduler.add_job(
+            "jobs:run_docket_deadline_notifications",
+            trigger="interval",
+            minutes=max(15, int(app.config.get("DEADLINE_NOTIFICATION_INTERVAL_MINUTES", 60))),
+            id="docket_deadline_notifications",
+            replace_existing=True,
+        )
         return scheduler
 
     def init_app(self, app) -> None:
