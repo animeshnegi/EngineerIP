@@ -1,817 +1,149 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocketTrack - Perfect Docket Master</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <link href="/static/docket/img/Dockettrack.png" sizes="32x32" rel="icon">
-
-    <style>
-        :root {
-            --sidebar-width: 250px;
-            --sidebar-collapsed-width: 70px;
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            overflow-x: hidden;
-        }
-
-        /* Sidebar Styles */
-        #sidebar {
-            width: var(--sidebar-collapsed-width);
-            /* Start collapsed */
-            background: linear-gradient(325deg, #d21f1f, #000000);
-            color: white;
-            transition: all 0.3s;
-            height: 100vh;
-            position: fixed;
-            z-index: 1000;
-            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Expanded sidebar state */
-        #sidebar.expanded {
-            width: var(--sidebar-width);
-        }
-
-        #sidebar .sidebar-header {
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #sidebar ul.components {
-            padding: 20px 0;
-        }
-
-        #sidebar ul li a {
-            padding: 12px 20px;
-            font-size: 1.1em;
-            display: block;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-        }
-
-        #sidebar ul li a:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-            border-left: 3px solid var(--secondary-color);
-        }
-
-        #sidebar ul li a i {
-            margin-right: 10px;
-            font-size: 1.2em;
-            transition: margin-right 0.3s;
-        }
-
-        /* Expanded state styles */
-        #sidebar.expanded ul li a span {
-            display: inline;
-        }
-
-        #sidebar.expanded ul li a i {
-            margin-right: 10px;
-            font-size: 1.2em;
-        }
-
-        #sidebar.expanded .sidebar-header h3 span {
-            display: inline;
-        }
-
-        #sidebar.expanded .sidebar-header h3:after {
-            content: "";
-        }
-
-        /* Collapsed state styles (default) */
-        #sidebar:not(.expanded) ul li a span {
-            display: none;
-        }
-
-        #sidebar:not(.expanded) ul li a i {
-            margin-right: 0;
-            font-size: 1.5em;
-        }
-
-        #sidebar:not(.expanded) .sidebar-header h3 span {
-            display: none;
-        }
-
-        #sidebar:not(.expanded) .sidebar-header h3:after {
-            content: "EIP";
-        }
-
-        /* Main Content Area */
-        #content {
-            margin-left: var(--sidebar-collapsed-width);
-            /* Start with collapsed sidebar */
-            transition: all 0.3s;
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        /* Expanded content state */
-        #content.expanded {
-            margin-left: var(--sidebar-width);
-        }
-
-
-        /* Case Cards */
-        .case-card {
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            margin-bottom: 20px;
-            border: none;
-        }
-
-        .case-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .case-card.patent {
-            border-left: 4px solid #3498db;
-        }
-
-        .case-card.trademark {
-            border-left: 4px solid #e74c3c;
-        }
-
-        .badge-due {
-            background-color: var(--accent-color);
-        }
-
-        /* Deadline Cards */
-        .deadline-card {
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            margin-bottom: 15px;
-            border: none;
-            transition: all 0.3s;
-        }
-
-        .deadline-card:hover {
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .deadline-card.critical {
-            border-left: 4px solid var(--accent-color);
-        }
-
-        .deadline-card.upcoming {
-            border-left: 4px solid #f39c12;
-        }
-
-        /* Timeline */
-        .timeline {
-            position: relative;
-            padding-left: 30px;
-            margin-top: 20px;
-        }
-
-        .timeline:before {
-            content: '';
-            position: absolute;
-            left: 10px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #e0e0e0;
-        }
-
-        .timeline-item {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .timeline-item:before {
-            content: '';
-            position: absolute;
-            left: -25px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--secondary-color);
-            border: 2px solid white;
-            box-shadow: 0 0 0 2px var(--secondary-color);
-        }
-
-        .timeline-item.critical:before {
-            background: var(--accent-color);
-            box-shadow: 0 0 0 2px var(--accent-color);
-        }
-
-        /* Toggle Switch */
-        .case-toggle {
-            background-color: #f8f9fa;
-            border-radius: 30px;
-            padding: 5px;
-            display: inline-flex;
-            margin-bottom: 20px;
-        }
-
-        .case-toggle .btn {
-            border-radius: 25px;
-            padding: 8px 20px;
-        }
-
-
-        .table thead th {
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .case-toggle .btn {
-            margin-right: 10px;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            #sidebar {
-                width: var(--sidebar-collapsed-width);
-            }
-
-            #sidebar .sidebar-header h3 span {
-                display: none;
-            }
-
-            #sidebar .sidebar-header h3:after {
-                content: "EIP";
-            }
-
-            #sidebar ul li a span {
-                display: none;
-            }
-
-            #sidebar ul li a i {
-                margin-right: 0;
-                font-size: 1.5em;
-            }
-
-            #content {
-                margin-left: var(--sidebar-collapsed-width);
-            }
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="EngineerIP DocketTrack — manage IP cases, deadlines, documents, and client projects in one workspace.">
+    <title>{% block title %}DocketTrack | EngineerIP{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='docket/img/Dockettrack.png') }}" sizes="32x32">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/docket.css') }}">
+    {% block head %}{% endblock %}
 </head>
+<body class="docket-app">
+    <div class="docket-shell">
+        <aside class="docket-sidebar" id="sidebar" aria-label="Docket navigation">
+            <a class="docket-brand" href="{{ url_for('docket.docindex') }}">
+                <span class="docket-brand-mark"><i class="bi bi-shield-check"></i></span>
+                <span class="docket-brand-copy">
+                    <strong>DocketTrack</strong>
+                    <small>EngineerIP workspace</small>
+                </span>
+            </a>
 
-<body>
-    <!-- Sidebar -->
-    <nav id="sidebar">
-        <div class="sidebar-header d-flex justify-content-between align-items-center">
-            <h3><i class="bi bi-briefcase"></i> <span>DocketTron</span></h3>
-            <button type="button" id="sidebarCollapse" class="btn btn-primary">
-                <i class="bi bi-chevron-right"></i>
-            </button>
-        </div>
+            <nav class="docket-nav">
+                <p class="docket-nav-label">Workspace</p>
+                <a class="{% if request.endpoint == 'docket.docindex' %}active{% endif %}" href="{{ url_for('docket.docindex') }}">
+                    <i class="bi bi-grid-1x2-fill"></i><span>Overview</span>
+                </a>
+                <a class="{% if request.endpoint == 'docket.mydesk' %}active{% endif %}" href="{{ url_for('docket.mydesk') }}">
+                    <i class="bi bi-kanban-fill"></i><span>Client projects</span>
+                </a>
+                <a class="{% if request.endpoint == 'docket.addcase' %}active{% endif %}" href="{{ url_for('docket.addcase') }}">
+                    <i class="bi bi-cloud-arrow-up-fill"></i><span>Upload cases</span>
+                </a>
+                <a href="{{ url_for('main.Share_files') }}">
+                    <i class="bi bi-folder-symlink-fill"></i><span>Shared files</span>
+                </a>
 
-        <ul class="list-unstyled `">
-            <li>
-                <a href="{{ url_for('docket.docindex')}}"><i class="bi bi-menu-app-fill"></i> <span>Docket</span></a>
-            </li>
-            <li>
-                <a href="{{ url_for('docket.mydesk')}}"><i class="bi bi-stopwatch-fill"></i></i> <span>Client
-                        Portal</span></a>
-            </li>
-            <li>
-                <a href="{{ url_for('docket.addcase')}}"><i class="bi bi-cloud-upload-fill"></i> <span>Upload
-                        Cases</span></a>
-            </li>
-            <li>
-                <a href="{{ url_for('main.Share_files')}}"><i class="bi bi-cloud-upload-fill"></i> <span>Upload
-                        Files</span></a>
-            </li>
-            <li>
-                <a href="#"><i class="bi bi-calendar-check"></i> <span>Calendar</span></a>
-            </li>
-            <li>
-                <a href="#"><i class="bi bi-bell"></i> <span>Notifications</span></a>
-            </li>
-            <li>
-                <a href="#"><i class="bi bi-gear"></i> <span>Settings</span></a>
-            </li>
-        </ul>
-    </nav>
+                <p class="docket-nav-label mt-4">Account</p>
+                <a class="{% if request.endpoint == 'docket.user_profile' %}active{% endif %}" href="{{ url_for('docket.user_profile') }}">
+                    <i class="bi bi-person-badge-fill"></i><span>Profile & preferences</span>
+                </a>
+                <a href="{{ url_for('main.home') }}">
+                    <i class="bi bi-box-arrow-up-right"></i><span>Public website</span>
+                </a>
+            </nav>
 
-    <!-- Main Content -->
-    <div id="content">
-
-        <!-- Page Header -->
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <h2 style="margin-left: 3%;"> {% if request.path == '/docket/' %}DocketTrack{% endif %}
-                {% if request.path == '/docket/My-desk' %}My Space</i>{% endif %}
-                {% if request.path == '/docket/add-case' %}Upload Case <i class="bi bi-cloud-upload-fill"></i>{% endif
-                %}
-                {% if request.path == '/Add-User' %}active{% endif %}
-                {% if request.path == '/Add-User' %}active{% endif %}
-            </h2>
-            <div class="d-flex align-items-center">
-                <div class="me-3">
-                    <span class="text-muted">Welcome,</span>
-                    <strong>{{user_name}}</strong>
-                </div>
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{url_for('docket.user_profile')}}">My Profile</a></li>
-                        <li><a class="dropdown-item" href="#">Settings</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item" href="{{url_for('docket.logout')}}">Logout</a></li>
-                    </ul>
-                </div>
+            <div class="docket-sidebar-footer">
+                <a class="d-flex align-items-center gap-2 text-decoration-none" href="{{ url_for('docket.logout') }}">
+                    <i class="bi bi-box-arrow-left"></i><span>Sign out</span>
+                </a>
             </div>
-        </div>
+        </aside>
+        <div class="docket-overlay" id="sidebarOverlay"></div>
 
+        <main class="docket-main" id="content">
+            <header class="docket-topbar">
+                <div class="docket-topbar-left">
+                    <button class="docket-menu-button" id="mobileMenuButton" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <button class="docket-sidebar-toggle" id="sidebarCollapse" type="button" aria-label="Collapse navigation" aria-expanded="true">
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+                    <div>
+                        <p class="docket-page-kicker">EngineerIP · DocketTrack</p>
+                        <h1 class="docket-page-title">{% block page_heading %}{{ page_title|default('Docket workspace') }}{% endblock %}</h1>
+                    </div>
+                </div>
+                <div class="docket-topbar-actions">
+                    <a class="docket-topbar-link" href="{{ url_for('main.Share_files') }}" title="Shared files" aria-label="Shared files">
+                        <i class="bi bi-folder2-open"></i>
+                    </a>
+                    <div class="dropdown docket-user-menu">
+                        <span class="docket-user-avatar" aria-hidden="true">{{ (user_name|default('User'))[:1]|upper }}</span>
+                        <button class="btn btn-link p-0 text-start text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="docket-user-name">{{ user_name|default('User') }}<span class="docket-user-role">Signed-in workspace</span></span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                            <li><a class="dropdown-item" href="{{ url_for('docket.user_profile') }}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('docket.logout') }}"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
 
-        {% block body %} {% endblock %}
-
+            <div class="docket-page">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="docket-toast" aria-live="polite">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category in ['error', 'danger'] else category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                {% block body %}{% endblock %}
+            </div>
+        </main>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
-
-
-
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
-
-        // Sidebar toggle functionality
-        document.addEventListener('DOMContentLoaded', function () {
+        (() => {
             const sidebar = document.getElementById('sidebar');
-            const content = document.getElementById('content');
-            const sidebarCollapse = document.getElementById('sidebarCollapse');
+            const main = document.getElementById('content');
+            const collapse = document.getElementById('sidebarCollapse');
+            const mobileButton = document.getElementById('mobileMenuButton');
+            const overlay = document.getElementById('sidebarOverlay');
+            const storageKey = 'engineerip.docket.sidebar-collapsed';
 
-            // Check localStorage for sidebar state, default to collapsed
-            const isSidebarExpanded = localStorage.getItem('sidebarExpanded') === 'true';
+            if (!sidebar || !main) return;
 
-            // Apply initial state
-            if (isSidebarExpanded) {
-                sidebar.classList.add('expanded');
-                content.classList.add('expanded');
-                sidebarCollapse.innerHTML = '<i class="bi bi-chevron-left"></i>';
-            } else {
-                // Default collapsed state
-                sidebar.classList.remove('expanded');
-                content.classList.remove('expanded');
-                sidebarCollapse.innerHTML = '<i class="bi bi-chevron-right"></i>';
-            }
-
-            // Toggle sidebar
-            sidebarCollapse.addEventListener('click', function () {
-                const isExpanded = sidebar.classList.toggle('expanded');
-                content.classList.toggle('expanded');
-
-                // Update button icon
-                if (isExpanded) {
-                    this.innerHTML = '<i class="bi bi-chevron-left"></i>';
-                } else {
-                    this.innerHTML = '<i class="bi bi-chevron-right"></i>';
-                }
-
-                // Save state to localStorage
-                localStorage.setItem('sidebarExpanded', isExpanded);
-            });
-
-            // Auto-collapse on mobile
-            function handleResize() {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('expanded');
-                    content.classList.remove('expanded');
-                    sidebarCollapse.innerHTML = '<i class="bi bi-chevron-right"></i>';
-                    localStorage.setItem('sidebarExpanded', false);
-                }
-            }
-
-            // Check on resize
-            window.addEventListener('resize', handleResize);
-            handleResize(); // Initial check
-        });
-
-
-        // Case type toggle functionality
-        document.querySelectorAll('.case-toggle .btn').forEach(button => {
-            button.addEventListener('click', function () {
-                // Update active state
-                document.querySelectorAll('.case-toggle .btn').forEach(btn => {
-                    btn.classList.remove('active', 'btn-primary');
-                    btn.classList.add('btn-outline-primary');
-                });
-                this.classList.add('active', 'btn-primary');
-                this.classList.remove('btn-outline-primary');
-
-                // Filter cases
-                const type = this.getAttribute('data-type');
-                const cases = document.querySelectorAll('.case-card');
-
-                cases.forEach(caseCard => {
-                    if (type === 'all' || caseCard.classList.contains(type)) {
-                        caseCard.style.display = 'block';
-                    } else {
-                        caseCard.style.display = 'none';
-                    }
-                });
-            });
-        });
-
-
-
-        // TABLE HEADERS DEFINITION 
-        const tableHeaders = {
-            trademark: [
-                { key: 'case_number', label: 'Case No', sortable: true },
-                { key: 'application_number', label: 'TM Application No', sortable: true },
-                { key: 'title', label: 'Trademark Name', sortable: true },
-                { key: 'filing_date', label: 'Filing Date', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'fee_status', label: 'Fee Status', sortable: true },
-                { key: 'actions', label: 'Actions' }
-            ],
-            patent: [
-                { key: 'case_number', label: 'Case No', sortable: true },
-                { key: 'application_number', label: 'Patent App No', sortable: true },
-                { key: 'title', label: 'Invention Title', sortable: true },
-                { key: 'filing_date', label: 'Filing Date', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'fee_status', label: 'Fee Status', sortable: true },
-                { key: 'actions', label: 'Actions' }
-            ],
-            design_patent: [
-                { key: 'case_number', label: 'Case No', sortable: true },
-                { key: 'application_number', label: 'Design App No', sortable: true },
-                { key: 'title', label: 'Design Title', sortable: true },
-                { key: 'filing_date', label: 'Filing Date', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'fee_status', label: 'Fee Status', sortable: true },
-                { key: 'actions', label: 'Actions' }
-            ],
-            pct_application: [
-                { key: 'case_number', label: 'Case No', sortable: true },
-                { key: 'application_number', label: 'PCT App No', sortable: true },
-                { key: 'title', label: 'Title', sortable: true },
-                { key: 'filing_date', label: 'Filing Date', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'fee_status', label: 'Fee Status', sortable: true },
-                { key: 'actions', label: 'Actions' }
-            ],
-            all: [
-                { key: 'type', label: 'Type', sortable: true },
-                { key: 'case_number', label: 'Case No', sortable: true },
-                { key: 'application_number', label: 'Application No', sortable: true },
-                { key: 'title', label: 'Title', sortable: true },
-                { key: 'filing_date', label: 'Filing Date', sortable: true },
-                { key: 'status', label: 'Status', sortable: true },
-                { key: 'fee_status', label: 'Fee Status', sortable: true },
-                { key: 'actions', label: 'Actions' }
-            ]
-        };
-
-        // Status badge mapping
-        const statusBadges = {
-            'draft': 'bg-secondary',
-            'filed': 'bg-info',
-            'pending': 'bg-warning',
-            'examination': 'bg-primary',
-            'allowed': 'bg-success',
-            'granted': 'bg-success',
-            'registered': 'bg-success',
-            'abandoned': 'bg-danger',
-            'rejected': 'bg-danger',
-            'appeal': 'bg-warning',
-            'opposition': 'bg-warning'
-        };
-
-        // Fee status badges
-        const feeStatusBadges = {
-            'paid': 'bg-success',
-            'unpaid': 'bg-warning',
-            'overdue': 'bg-danger'
-        };
-
-        // Function to render table headers
-        function renderTableHeaders(type) {
-            const headers = tableHeaders[type];
-            const headerHtml = headers.map(header =>
-                `<th class="${header.sortable ? 'sortable' : ''}" data-key="${header.key}">
-            ${header.label}
-            ${header.sortable ? '<i class="bi bi-arrow-down-up ms-1"></i>' : ''}
-        </th>`
-            ).join('');
-
-            document.getElementById('tableHeader').innerHTML = `<tr>${headerHtml}</tr>`;
-        }
-
-        // Function to render table rows
-        function renderTableRows(cases) {
-            const rowsHtml = cases.map(caseItem => `
-        <tr class="case-row" data-case-id="${caseItem.id}" data-type="${caseItem.type}">
-            ${caseItem.viewType === 'all' ? `
-                <td>
-                    <span class="badge ${getTypeBadge(caseItem.type)}">
-                        ${formatCaseType(caseItem.type)}
-                    </span>
-                </td>
-            ` : ''}
-            <td>
-                <strong>${caseItem.case_number}</strong>
-                ${caseItem.priority_date ? `<br><small class="text-muted">Priority: ${formatDate(caseItem.priority_date)}</small>` : ''}
-            </td>
-            <td>${caseItem.application_number}</td>
-            <td>
-                <div class="fw-semibold">${caseItem.title}</div>
-                ${caseItem.description ? `<small class="text-muted">${caseItem.description.substring(0, 50)}...</small>` : ''}
-            </td>
-            <td>
-                ${formatDate(caseItem.filing_date)}
-                ${caseItem.grant_date ? `<br><small class="text-success">Granted: ${formatDate(caseItem.grant_date)}</small>` : ''}
-            </td>
-            <td>
-                <span class="badge ${statusBadges[caseItem.status] || 'bg-secondary'}">
-                    ${formatStatus(caseItem.status)}
-                </span>
-                ${caseItem.uspto_status ? `<br><small class="text-muted">${caseItem.uspto_status}</small>` : ''}
-            </td>
-            <td>
-                <span class="badge ${feeStatusBadges[caseItem.fee_status] || 'bg-secondary'}">
-                    ${caseItem.fee_status}
-                </span>
-            </td>
-            <td>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-gear"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item view-details" href="#" data-case-id="${caseItem.id}">
-                            <i class="bi bi-eye me-2"></i>View Details
-                        </a></li>
-                        <li><a class="dropdown-item" href="#">
-                            <i class="bi bi-bell me-2"></i>Set Reminder
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">
-                            <i class="bi bi-pencil me-2"></i>Edit Case
-                        </a></li>
-                    </ul>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-
-            document.getElementById('casesContainer').innerHTML = rowsHtml;
-
-            // Add event listeners for view details
-            document.querySelectorAll('.view-details').forEach(button => {
-                button.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const caseId = this.getAttribute('data-case-id');
-                    openNotificationModal(caseId);
-                });
-            });
-        }
-
-        // Function to open notification modal with case details
-        async function openNotificationModal(caseId) {
-            try {
-                // Fetch case details from backend
-                const response = await fetch(`/api/cases/${caseId}/details`);
-                const caseData = await response.json();
-
-                // Populate case details
-                document.getElementById('caseDetails').innerHTML = `
-            <table class="table table-sm table-borderless">
-                <tr>
-                    <td class="fw-semibold" style="width: 40%">Title:</td>
-                    <td>${caseData.title}</td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Application Number:</td>
-                    <td>${caseData.application_number}</td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Filing Date:</td>
-                    <td>${formatDate(caseData.filing_date)}</td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Status:</td>
-                    <td><span class="badge ${statusBadges[caseData.status]}">${formatStatus(caseData.status)}</span></td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Inventors/Attorneys:</td>
-                    <td>
-                        ${caseData.inventors && caseData.inventors.length > 0 ?
-                        caseData.inventors.map(inv => `${inv.first_name} ${inv.last_name}`).join(', ') :
-                        'No inventors assigned'
-                    }
-                    </td>
-                </tr>
-                <tr>
-                    <td class="fw-semibold">Description:</td>
-                    <td>${caseData.description || 'No description available'}</td>
-                </tr>
-            </table>
-        `;
-
-                // Populate deadlines
-                const deadlinesHtml = caseData.deadlines && caseData.deadlines.length > 0 ?
-                    caseData.deadlines.map(deadline => `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded ${getDeadlineAlertClass(deadline)}">
-                    <div>
-                        <div class="fw-semibold">${deadline.title}</div>
-                        <small class="text-muted">Due: ${formatDate(deadline.due_date)}</small>
-                    </div>
-                    <span class="badge ${getDeadlineStatusBadge(deadline)}">${deadline.status}</span>
-                </div>
-            `).join('') :
-                    '<p class="text-muted">No upcoming deadlines</p>';
-
-                document.getElementById('deadlinesList').innerHTML = deadlinesHtml;
-
-                // Populate timeline
-                const timelineHtml = caseData.status_history && caseData.status_history.length > 0 ?
-                    caseData.status_history.map(event => `
-                <div class="timeline-item mb-3">
-                    <div class="d-flex">
-                        <div class="timeline-marker bg-primary rounded-circle me-3" style="width: 12px; height: 12px; margin-top: 5px;"></div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold">${event.new_status}</div>
-                            <small class="text-muted">${formatDate(event.change_date)}</small>
-                            ${event.status_description ? `<div class="mt-1">${event.status_description}</div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `).join('') :
-                    '<p class="text-muted">No timeline events</p>';
-
-                document.getElementById('caseTimeline').innerHTML = timelineHtml;
-
-                // Populate office actions
-                const officeActionsHtml = caseData.office_actions && caseData.office_actions.length > 0 ?
-                    caseData.office_actions.map(oa => `
-                <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                    <div>
-                        <div class="fw-semibold">${oa.oa_type} Office Action</div>
-                        <small class="text-muted">Mailed: ${formatDate(oa.mailing_date)} | Due: ${formatDate(oa.due_date)}</small>
-                        ${oa.summary ? `<div class="mt-1 small">${oa.summary}</div>` : ''}
-                    </div>
-                    <span class="badge ${oa.response_filed ? 'bg-success' : 'bg-warning'}">
-                        ${oa.response_filed ? 'Responded' : 'Pending'}
-                    </span>
-                </div>
-            `).join('') :
-                    '<p class="text-muted">No office actions</p>';
-
-                document.getElementById('officeActionsList').innerHTML = officeActionsHtml;
-
-                // Set modal title
-                document.getElementById('notificationModalTitle').textContent = `Case Details: ${caseData.case_number}`;
-
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
-                modal.show();
-
-            } catch (error) {
-                console.error('Error loading case details:', error);
-                alert('Error loading case details');
-            }
-        }
-
-        // Utility functions
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        }
-
-        function formatCaseType(type) {
-            const typeMap = {
-                'patent': 'Patent',
-                'trademark': 'Trademark',
-                'design_patent': 'Design Patent',
-                'pct_application': 'PCT Application'
+            const setCollapsed = (collapsed) => {
+                sidebar.classList.toggle('is-collapsed', collapsed);
+                main.classList.toggle('is-sidebar-collapsed', collapsed);
+                if (collapse) collapse.setAttribute('aria-expanded', String(!collapsed));
+                localStorage.setItem(storageKey, String(collapsed));
             };
-            return typeMap[type] || type;
-        }
 
-        function formatStatus(status) {
-            return status.split('_').map(word =>
-                word.charAt(0).toUpperCase() + word.slice(1)
-            ).join(' ');
-        }
+            if (window.innerWidth > 860 && localStorage.getItem(storageKey) === 'true') setCollapsed(true);
 
-        function getTypeBadge(type) {
-            const badgeMap = {
-                'patent': 'bg-primary',
-                'trademark': 'bg-danger',
-                'design_patent': 'bg-info',
-                'pct_application': 'bg-warning'
-            };
-            return badgeMap[type] || 'bg-secondary';
-        }
-
-        function getDeadlineAlertClass(deadline) {
-            const today = new Date();
-            const dueDate = new Date(deadline.due_date);
-            const diffTime = dueDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) return 'border-danger bg-danger bg-opacity-10';
-            if (diffDays <= 7) return 'border-warning bg-warning bg-opacity-10';
-            if (diffDays <= 30) return 'border-info bg-info bg-opacity-10';
-            return '';
-        }
-
-        function getDeadlineStatusBadge(deadline) {
-            const statusMap = {
-                'pending': 'bg-warning',
-                'completed': 'bg-success',
-                'overdue': 'bg-danger',
-                'extended': 'bg-info'
-            };
-            return statusMap[deadline.status] || 'bg-secondary';
-        }
-
-        // Initialize with trademark cases
-        document.addEventListener('DOMContentLoaded', function () {
-            renderTableHeaders('trademark');
-            loadCases('trademark');
-
-            // Add scroll event listener for infinite loading
-            window.addEventListener('scroll', function () {
-                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
-                    loadMoreCases();
+            collapse?.addEventListener('click', () => setCollapsed(!sidebar.classList.contains('is-collapsed')));
+            mobileButton?.addEventListener('click', () => {
+                const open = sidebar.classList.toggle('is-open');
+                overlay?.classList.toggle('is-open', open);
+                mobileButton.setAttribute('aria-expanded', String(open));
+            });
+            overlay?.addEventListener('click', () => {
+                sidebar.classList.remove('is-open');
+                overlay.classList.remove('is-open');
+                mobileButton?.setAttribute('aria-expanded', 'false');
+            });
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 860) {
+                    sidebar.classList.remove('is-open');
+                    overlay?.classList.remove('is-open');
+                    mobileButton?.setAttribute('aria-expanded', 'false');
                 }
             });
-
-            // Case type toggle event listeners
-            document.querySelectorAll('.case-toggle .btn').forEach(button => {
-                button.addEventListener('click', function () {
-                    const type = this.getAttribute('data-type');
-
-                    // Update active button
-                    document.querySelectorAll('.case-toggle .btn').forEach(btn => {
-                        btn.classList.remove('active', 'btn-primary');
-                        btn.classList.add('btn-outline-primary');
-                    });
-                    this.classList.add('active', 'btn-primary');
-                    this.classList.remove('btn-outline-primary');
-
-                    // Render appropriate headers and load cases
-                    renderTableHeaders(type);
-                    loadCases(type);
-                });
-            });
-        });
-
-        // Function to load cases from backend
-        async function loadCases(type, page = 1) {
-            try {
-                const response = await fetch(`/api/cases?type=${type}&page=${page}`);
-                const data = await response.json();
-                renderTableRows(data.cases);
-            } catch (error) {
-                console.error('Error loading cases:', error);
-            }
-        }
-
-
-
+        })();
     </script>
-
-
-
-
-
-
-
-
-
-
+    {% block scripts %}{% endblock %}
 </body>
-
-
-
-
 </html>

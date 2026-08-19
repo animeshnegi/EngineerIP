@@ -1,9 +1,10 @@
 {% extends "layout.html" %}
+{% block title %}Contact EngineerIP | Patent & Trademark Support{% endblock %}
 {% block body %}
 
 <!-- Page Title -->
 <div class="page-title"
-    style="background-image: url('static/img/contactus.jpg');background-size: cover; background-position: center;">
+    style="background-image: url('{{ url_for('static', filename='img/contactus.jpg') }}');background-size: cover; background-position: center;">
     <div class="container position-relative">
         <h1>Contact Us</h1>
         <p>Have Questions? We're Here to Help.</p>
@@ -54,15 +55,13 @@
         </div>
 
     </div>
-    <Hr>
-    </Hr>
+    <hr>
 
 
     <div class="container ratio mt-5 mb-5 ratio-16x9" style="height: 30rem; display: flex;">
 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d766.0239583771897!2d-75.55747541292763!3d39.75368230470355!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c6fd114f68615d%3A0xbd940ed7edda460f!2s1207%20Delaware%20Ave%20%23759%2C%20Wilmington%2C%20DE%2019806%2C%20USA!5e0!3m2!1sen!2sin!4v1783967188228!5m2!1sen!2sin" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>
     </div>
-    <Hr>
-    </Hr>
+    <hr>
 
 
  <section id="contact" class="contact section">
@@ -109,24 +108,25 @@
         </div>
 
         <div class="col-lg-8">
-          <form action="/query" id="contact" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200">
+          <form action="{{ url_for('main.handle_query') }}" id="contactForm" method="post" class="php-email-form" data-aos="fade-up" data-aos-delay="200" novalidate>
+            <div class="contact-feedback alert" id="contactFeedback" role="status" aria-live="polite"></div>
             <div class="row gy-4">
 
               <div class="col-md-6">
-                <input type="text" name="name" id="name" class="form-control" placeholder="Your Name" required="">
+                <input type="text" name="name" id="name" class="form-control" placeholder="Your Name" autocomplete="name" maxlength="120" required>
               </div>
 
               <div class="col-md-6 ">
-                <input type="email" class="form-control" name="email" id="email" placeholder="Your Email" required="">
+                <input type="email" class="form-control" name="email" id="email" placeholder="Your Email" autocomplete="email" maxlength="160" required>
               </div>
 
               <div class="col-md-12">
-                <input type="text" class="form-control" name="subject" id="subject" placeholder="Subject" required="">
+                <input type="text" class="form-control" name="subject" id="subject" placeholder="Subject" maxlength="180" required>
               </div>
 
               <div class="col-md-12">
-                <textarea class="form-control" name="message" id="message" rows="6" placeholder="Message"
-                  required=""></textarea>
+                <textarea class="form-control" name="message" id="message" rows="6" placeholder="Tell us how we can help"
+                  maxlength="4000" required></textarea>
               </div>
 
               <div class="row align-items-center mt-3">
@@ -157,10 +157,10 @@
 
                 <!-- Right side: Button -->
                 <div class="col-lg-4 text-end">
-                  <div class="loading">Loading</div>
+                  <div class="loading d-none">Sending…</div>
                   <div class="error-message"></div>
                   <div class="sent-message"></div>
-                  <button class="end btn btn-primary" type="submit" id="submitBtn" type="submit" >Send
+                  <button class="end btn btn-primary contact-submit" type="submit" id="submitBtn">Send
                     Message</button>
                 </div>
               </div>
@@ -176,6 +176,7 @@
     </div>
 
   </section>
+
 
 
 

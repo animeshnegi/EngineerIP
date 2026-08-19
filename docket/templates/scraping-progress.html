@@ -1,0 +1,37 @@
+{% extends "d-layout.html" %}
+{% block title %}Processing upload | DocketTrack{% endblock %}
+{% block page_heading %}Processing upload{% endblock %}
+{% block body %}
+<section class="docket-panel mx-auto" style="max-width:760px">
+  <div class="docket-panel-header"><div><h2>Case data processing</h2><p>We will keep the progress updated while your records are checked.</p></div><i class="bi bi-arrow-repeat text-primary fs-4"></i></div>
+  <div class="docket-panel-body">
+    <div class="progress" role="progressbar" aria-label="Processing progress" style="height:12px"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="d-flex justify-content-between mt-3 small text-secondary"><span id="progressMessage">Checking status…</span><strong id="progressPercent">0%</strong></div>
+    <div class="row g-3 mt-3 text-center"><div class="col-4"><div class="h4 mb-0" id="processedCount">0</div><small class="text-secondary">Processed</small></div><div class="col-4"><div class="h4 mb-0 text-success" id="successCount">0</div><small class="text-secondary">Successful</small></div><div class="col-4"><div class="h4 mb-0 text-danger" id="failedCount">0</div><small class="text-secondary">Failed</small></div></div>
+    <div class="text-center mt-4"><a class="btn btn-primary d-none" id="downloadResults" href="#">Download results</a><a class="btn btn-outline-secondary ms-2" href="{{ url_for('docket.addcase') }}">Back to uploads</a></div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const fileId = {{ file_id|tojson }};
+  const update = async () => {
+    const response = await fetch('{{ url_for("docket.scraping_status") }}?file_id=' + encodeURIComponent(fileId || ''), {credentials:'same-origin'});
+    const data = await response.json(); const progress = data.progress || {}; const total = progress.total || 0;
+    const percent = total ? Math.round((progress.processed || 0) / total * 100) : (data.complete ? 100 : 0);
+    document.getElementById('progressBar').style.width = `${percent}%`;
+    document.getElementById('progressPercent').textContent = `${percent}%`;
+    document.getElementById('progressMessage').textContent = progress.current_item || 'Waiting…';
+    document.getElementById('processedCount').textContent = progress.processed || 0;
+    document.getElementById('successCount').textContent = progress.successful || 0;
+    document.getElementById('failedCount').textContent = progress.failed || 0;
+    if (data.complete) {
+      clearInterval(timer);
+      if (progress.file_id) { const link = document.getElementById('downloadResults'); link.href = `/docket/download-results/${progress.file_id}`; link.classList.remove('d-none'); }
+    }
+  };
+  const timer = setInterval(update, 2000); update().catch(() => { document.getElementById('progressMessage').textContent = 'Unable to read processing status.'; });
+})();
+</script>
+{% endblock %}

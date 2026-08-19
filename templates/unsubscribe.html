@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}Unsubscribed | EngineerIP{% endblock %}
+{% block body %}
+<main class="main page-shell">
+  <section class="section section-status-page">
+    <div class="container text-center">
+      <div class="status-icon status-icon-success"><i class="bi bi-check2-circle"></i></div>
+      <h1>You are unsubscribed</h1>
+      <p class="lead">We will no longer send campaign emails to <strong>{{ email }}</strong>.</p>
+      <a class="btn btn-primary" href="{{ url_for('main.home') }}">Return to EngineerIP</a>
+    </div>
+  </section>
+</main>
+{% endblock %}
