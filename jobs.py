@@ -1,39 +1,52 @@
+"""Functions executed by APScheduler."""
+
+from __future__ import annotations
+
 import logging
 import random
+from threading import Lock
+
 from flask import current_app
 
-# this is the file Where the all the tasks are stored, like sending emails, generating random digits, etc.
 
 _app = None
+_app_lock = Lock()
 
-def register_app(app):
+
+def register_app(app) -> None:
     global _app
-    _app = app
-    print("App registered in jobs.py")
-    logging.getLogger().info("App registered in jobs.py")
+    with _app_lock:
+        _app = app
+    logging.getLogger(__name__).info("Flask app registered for scheduled jobs")
 
 
-def run_scheduled_campaigns():
+def run_scheduled_campaigns() -> bool:
+    """Run the campaign worker inside the registered Flask app context."""
+
+    app = _app
+    if app is None:
+        logging.getLogger(__name__).error("Campaign job skipped: Flask app is not registered")
+        return False
+
     try:
-        if _app is None:
-            print("app is still None!")
-            raise RuntimeError("Flask app not registered")
-
-        print("Inside run_scheduled_campaigns() with app context")
-        with _app.app_context():
+        with app.app_context():
             from routes import send_scheduled_campaigns
-            send_scheduled_campaigns()
-        return True
-    except Exception as e:
-        if _app:
-            _app.logger.error(f"Campaign job failed: {str(e)}")
-        else:
-            logging.error(f"Campaign job failed: {str(e)}")
+
+            result = send_scheduled_campaigns()
+            return result is not False
+    except Exception:
+        app.logger.exception("Scheduled campaign job failed")
         return False
 
 
+def generate_random_digits() -> int:
+    """Small utility retained for legacy callers."""
 
-def generate_random_digits():
-    with _app.app_context():
+    app = _app
+    if app is None:
+        raise RuntimeError("Flask app not registered")
+
+    with app.app_context():
         digits = random.randint(1000, 9999)
-        current_app.logger.info(f"Generated random digits: {digits}")
+        current_app.logger.info("Generated random digits: %s", digits)
+        return digits

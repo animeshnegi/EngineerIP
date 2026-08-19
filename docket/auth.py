@@ -2,7 +2,8 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from itsdangerous import URLSafeTimedSerializer
-from models import db, User
+from models import db
+from docket.models import User
 import re
 
 auth_bp = Blueprint('auth', __name__)

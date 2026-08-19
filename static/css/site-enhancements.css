@@ -1,0 +1,13 @@
+/* Small, shared presentation improvements for the public website. */
+.footer-spacer { height: clamp(1rem, 3vw, 3rem); }
+.page-shell { min-height: 50vh; }
+.section-status-page { padding: 8rem 0; }
+.status-icon { width: 76px; height: 76px; display: grid; place-items: center; margin: 0 auto 1.5rem; border-radius: 24px; font-size: 2.5rem; }
+.status-icon-success { color: #0b8f69; background: #e5f8f0; }
+.contact-feedback { display: none; margin-bottom: 1rem; }
+.contact-feedback.is-visible { display: block; }
+.contact-submit { min-width: 150px; }
+.hero video { background: #101a30; }
+@media (prefers-reduced-motion: reduce) {
+  .hero video[autoplay] { display: none; }
+}

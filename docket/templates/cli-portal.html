@@ -1039,14 +1039,14 @@
             const statusInfo = getStatusInfo(project);
 
             return `
-                <div class="project-card-modern ${hasNewMessages ? 'has-new-messages' : ''}" 
-                     data-status="${statusInfo.status}" 
-                     data-days="${days}" 
-                     data-project-id="${project.id}" 
+                <div class="project-card-modern ${hasNewMessages ? 'has-new-messages' : ''}"
+                     data-status="${statusInfo.status}"
+                     data-days="${days}"
+                     data-project-id="${project.id}"
                      data-new-messages="${hasNewMessages}">
-                    
+
                     ${hasNewMessages ? '<div class="new-messages-indicator"></div>' : ''}
-                    
+
                     <div class="project-card-header">
                         <div class="project-status-badge status-${statusInfo.status}">
                             <i class="fas ${statusInfo.icon}"></i> ${statusInfo.text}
@@ -1143,13 +1143,13 @@
     function filterProjects(filter) {
         currentFilter = filter;
 
-        // Update active tab
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        event.target.classList.add('active');
+        // Update active tab without relying on the deprecated global `event`.
+        document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+        const activeTab = Array.from(document.querySelectorAll('.filter-tab')).find(tab =>
+            (tab.getAttribute('onclick') || '').includes(`'${filter}'`)
+        );
+        if (activeTab) activeTab.classList.add('active');
 
-        // Apply the filter
         const filteredProjects = getFilteredProjects(filter);
         renderProjects(filteredProjects);
     }
@@ -1187,7 +1187,7 @@
             return (
                 project.name.toLowerCase().includes(searchTerm) ||
                 project.ref_id.toLowerCase().includes(searchTerm) ||
-                project.description.toLowerCase().includes(searchTerm)
+                (project.description || '').toLowerCase().includes(searchTerm)
             );
         });
 
@@ -1202,45 +1202,6 @@
     }
 
     // Chat functions
-    // Chat functions
-    async function openChat(projectId) {
-        currentProjectId = projectId;
-        const sidebar = document.getElementById('chatSidebar');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-
-        // Mark messages as seen
-        await markMessagesAsSeen(projectId);
-
-        // Enable input and button
-        messageInput.disabled = false;
-        sendButton.disabled = false;
-
-        // Open sidebar
-        sidebar.classList.add('active');
-
-        // Load project info and messages
-        await loadChatProjectInfo(projectId);
-        await loadMessages(true); // true = initial load
-
-        // Focus input
-        setTimeout(() => {
-            messageInput.focus();
-        }, 100);
-
-        // Start auto-refresh for chat
-        if (chatRefreshInterval) {
-            clearInterval(chatRefreshInterval);
-        }
-        chatRefreshInterval = setInterval(() => {
-            loadMessages(false);
-        }, 5000);
-
-        // Refresh projects to update new message indicators
-        loadProjects();
-    }
-
-
     // Chat functions
     async function openChat(projectId) {
         currentProjectId = projectId;
@@ -1380,8 +1341,8 @@
                 const isUnseen = msg.is_admin && !msg.is_seen;
 
                 messagesHTML += `
-                <div class="message ${isSent ? 'sent' : 'received'} ${isUnseen ? 'unseen' : ''}" 
-                     data-message-id="${msg.id}" 
+                <div class="message ${isSent ? 'sent' : 'received'} ${isUnseen ? 'unseen' : ''}"
+                     data-message-id="${msg.id}"
                      data-is-seen="${msg.is_seen}">
                     <div class="message-avatar">${senderInitial}</div>
                     <div class="message-content">
@@ -1404,7 +1365,7 @@
                                     <div class="file-name">${msg.file.filename}</div>
                                     <div class="file-meta">${fileSize} • ${msg.file.file_type || 'File'}</div>
                                 </div>
-                                <button class="download-attachment" onclick="downloadFile(${msg.file.id})" 
+                                <button class="download-attachment" onclick="downloadFile(${msg.file.id})"
                                         title="Download ${msg.file.filename}">
                                     <i class="fas fa-download"></i>
                                 </button>
@@ -1689,32 +1650,25 @@
             const filesResponse = await fetch(`/docket/get-project-files/${projectId}/files`);
             const additionalFiles = await filesResponse.json();
 
-            // Filter messages with files
+            // ProjectFile is the canonical file list. Message attachments are
+            // only used to recover sender information and avoid duplicate rows.
             const filesWithMessages = messages.filter(msg => msg.has_file && msg.file);
+            const messageByFileId = new Map(filesWithMessages.map(msg => [String(msg.file.id), msg]));
+            const allFiles = Array.isArray(additionalFiles) ? additionalFiles.map(file => {
+                const message = messageByFileId.get(String(file.id));
+                return {
+                    file,
+                    is_admin: message ? message.is_admin : !file.is_sent_by_me,
+                    sender: message ? message.sender : (file.is_sent_by_me ? 'You' : 'Admin')
+                };
+            }) : [];
 
-            // Separate files into admin and client
-            const adminFiles = filesWithMessages.filter(msg => msg.is_admin);
-            const clientFiles = filesWithMessages.filter(msg => !msg.is_admin);
+            const adminFiles = allFiles.filter(item => item.is_admin);
+            const clientFiles = allFiles.filter(item => !item.is_admin);
 
-            // Add additional files to client files
-            if (additionalFiles && Array.isArray(additionalFiles)) {
-                additionalFiles.forEach(file => {
-                    clientFiles.push({
-                        file: file,
-                        is_admin: false,
-                        sender: 'You'
-                    });
-                });
-            }
-
-            // Update counts
             document.getElementById('receivedCount').textContent = adminFiles.length;
             document.getElementById('sentCount').textContent = clientFiles.length;
-
-            // Render admin files (received)
             renderFileList('receivedFilesList', adminFiles, 'noReceivedFiles');
-
-            // Render client files (sent) with delete option
             renderFileList('sentFilesList', clientFiles, 'noSentFiles', true);
 
         } catch (error) {
@@ -1753,7 +1707,7 @@
                     '<span class="status-badge received-badge">Received</span>'
                 }
                     </div>
-                    
+
                     <div class="file-info-top">
                         <div class="file-icon-name">
                             <div class="file-icon-panel">
@@ -1765,13 +1719,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="file-meta-bottom">
                         <div class="file-meta-left">
                             <div class="upload-date">${formatDate(file.uploaded_at)}</div>
                         </div>
                     </div>
-                    
+
                     <div class="file-actions-panel">
                         <button class="btn-action download" onclick="downloadFile(${file.id})" title="Download">
                             <i class="fas fa-download"></i>
@@ -1812,8 +1766,9 @@
     }
 
     function sendEmailToAdmin() {
-        // You can implement email functionality here
-        showToast('info', 'Email functionality coming soon!');
+        if (!currentProjectData) return;
+        const subject = encodeURIComponent(`Project ${currentProjectData.ref_id}: ${currentProjectData.name}`);
+        window.location.href = `mailto:mail@engineerip.com?subject=${subject}`;
     }
 
     function downloadProjectFiles() {
@@ -1988,14 +1943,14 @@
     // Create project function
     async function createProject() {
         const submitBtn = document.querySelector('button[onclick="createProject()"]');
-        if (submitBtn.disabled) {
+        if (!submitBtn || submitBtn.disabled) {
             console.log("Already submitting, please wait...");
             return;
         }
+        const originalText = submitBtn.innerHTML;
 
         try {
             // Show loading state
-            const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
             submitBtn.disabled = true;
 
@@ -2083,7 +2038,7 @@
                             <i class="fas fa-file me-2"></i>
                             <span>Selected: <strong>${currentFiles[0].name}</strong></span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                        <button type="button" class="btn btn-sm btn-outline-danger"
                                 onclick="removeFile(0)" title="Remove file">
                             <i class="fas fa-times"></i>
                         </button>
@@ -2098,7 +2053,7 @@
                             <i class="fas fa-folder-open me-2"></i>
                             <span><strong>${currentFiles.length} files selected:</strong></span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                        <button type="button" class="btn btn-sm btn-outline-danger"
                                 onclick="removeAllFiles()" title="Remove all files">
                             <i class="fas fa-times-circle"></i> Clear All
                         </button>
@@ -2113,7 +2068,7 @@
                                         <small class="text-muted">${formatFileSize(file.size)}</small>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" 
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2"
                                         onclick="removeFile(${index})" title="Remove this file">
                                     <i class="fas fa-times"></i>
                                 </button>

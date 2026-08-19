@@ -1,90 +1,86 @@
+/* Shared contact-form behaviour for the Flask website. */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.php-email-form').forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
 
-  document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('contact');
-    const submitBtn = document.getElementById('submitBtn');
+      const loading = form.querySelector('.loading');
+      const errorMessage = form.querySelector('.error-message');
+      const sentMessage = form.querySelector('.sent-message');
+      const submitButton = form.querySelector('[type="submit"]');
+      const mathInput = form.querySelector('[name="math_verification"]');
 
-
-    // If form does not exist on this page, do nothing
-    if (!form) return;
-
-    form.addEventListener('submit', function (event) {
-      // Get the math verification value
-      const mathInput = document.getElementById('math_verification');
-      const answer = parseInt(mathInput.value);
-
-      // Check if answer is correct (7 + 5 = 12)
-      if (answer !== 12) {
-        event.preventDefault();
-        alert('Incorrect answer. Please enter the correct answer for 7 + 5 = ?');
+      if (mathInput && Number.parseInt(mathInput.value, 10) !== 12) {
+        showError('Please solve the verification question.', form, errorMessage);
         mathInput.focus();
         return;
       }
-
-      // If answer is correct, form will submit normally
-    });
-  });
-  
-
-
-
-(function () {
-  "use strict";
-
-  let forms = document.querySelectorAll('.php-email-form');
-
-  forms.forEach(function (form) {
-    form.addEventListener('submit', function (event) {
-      event.preventDefault();
-
-      let thisForm = this;
-      let action = thisForm.getAttribute('action');
-
-      if (!action) {
-        displayError(thisForm, 'Form action is not set.');
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        showError('Please complete the required fields.', form, errorMessage);
         return;
       }
 
-      // Show loading
-      thisForm.querySelector('.loading').classList.add('d-block');
-      thisForm.querySelector('.error-message').classList.remove('d-block');
-      thisForm.querySelector('.sent-message').classList.remove('d-block');
+      loading?.classList.remove('d-none');
+      loading?.classList.add('d-block');
+      errorMessage?.classList.remove('d-block');
+      sentMessage?.classList.remove('d-block');
+      if (submitButton) submitButton.disabled = true;
 
-      let formData = new FormData(thisForm);
-
-      fetch(action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-        .then(response => response.text())
-        .then(data => {
-
-          thisForm.querySelector('.loading').classList.remove('d-block');
-
-          // 🔥 Match Flask response
-          if (data.trim() === "Thankyou") {
-            thisForm.querySelector('.sent-message').innerHTML =
-              "Thank you! Your message has been submitted successfully.";
-            thisForm.querySelector('.sent-message').classList.add('d-block');
-            thisForm.reset();
-          } else {
-            displayError(thisForm, data);
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
           }
-        })
-        .catch(error => {
-          displayError(thisForm, error);
         });
+        const contentType = response.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json') ? await response.json() : { success: response.ok, message: await response.text() };
+        if (!response.ok || !payload.success) {
+          throw new Error(payload.message || 'We could not submit your request.');
+        }
+        if (sentMessage) {
+          sentMessage.textContent = payload.message || 'Thank you. Your message has been sent.';
+          sentMessage.classList.add('d-block');
+        } else {
+          showSuccess(payload.message || 'Thank you. Your message has been sent.', form);
+        }
+        form.reset();
+        form.classList.remove('was-validated');
+      } catch (error) {
+        showError(error.message || 'Please try again.', form, errorMessage);
+      } finally {
+        loading?.classList.remove('d-block');
+        loading?.classList.add('d-none');
+        if (submitButton) submitButton.disabled = false;
+      }
     });
   });
 
-  function displayError(thisForm, error) {
-    let errorMessage = error.message || error;
-
-    thisForm.querySelector('.loading').classList.remove('d-block');
-    thisForm.querySelector('.error-message').innerHTML ="Incorrect. Please try again.";
-    thisForm.querySelector('.error-message').classList.add('d-block');
+  function showError(message, form, element) {
+    if (element) {
+      element.textContent = message;
+      element.classList.add('d-block');
+    } else {
+      showInlineMessage(message, form, 'alert-danger');
+    }
   }
 
-})();
+  function showSuccess(message, form) {
+    showInlineMessage(message, form, 'alert-success');
+  }
+
+  function showInlineMessage(message, form, className) {
+    let element = form.querySelector('.contact-feedback');
+    if (!element) {
+      element = document.createElement('div');
+      element.className = 'contact-feedback alert';
+      form.prepend(element);
+    }
+    element.textContent = message;
+    element.classList.remove('alert-danger', 'alert-success');
+    element.classList.add(className, 'is-visible');
+  }
+});

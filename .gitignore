@@ -1,0 +1,25 @@
+# Local Python/runtime files
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local configuration and databases
+.env
+.env.*
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# Runtime uploads (existing tracked files are intentionally left untouched)
+projects_data/*
+shared_files/shared/*
+uploads/*
+static/upload/*
+static/user_data/*
+!projects_data/.gitkeep
+!shared_files/shared/.gitkeep
+!uploads/.gitkeep
+!static/upload/.gitkeep
+!static/user_data/.gitkeep

@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocketTron - Authentication</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>DocketTrack | Secure IP workspace</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}">
     <style>
         body {
             margin: 0;
@@ -180,11 +180,11 @@
             .auth-container {
                 justify-content: center;
             }
-            
+
             .auth-form-container {
                 margin-right: 0;
             }
-            
+
             .auth-background::after {
                 background: linear-gradient(90deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.9) 100%);
             }
@@ -194,11 +194,11 @@
             .auth-body {
                 padding: 30px 20px;
             }
-            
+
             .auth-header {
                 padding: 20px;
             }
-            
+
             .auth-header h2 {
                 font-size: 1.5rem;
             }
@@ -208,13 +208,13 @@
 <body>
     <div class="auth-container">
         <div class="auth-background"></div>
-        
+
         <div class="auth-form-container">
             <div class="auth-card">
                 <!-- Login Form -->
                 <div id="login-form">
                     <div class="auth-header">
-                        <h2><i class="bi bi-briefcase"></i> DocketTron Login</h2>
+                        <h2><i class="bi bi-briefcase"></i> DocketTrack Login</h2>
                     </div>
                     <div class="auth-body">
                         <!-- Flash messages -->
@@ -242,17 +242,18 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Login</button>
                         </form>
-                        
-                        <div class="auth-switch">
+
+                        <div class="auth-switch d-flex justify-content-between gap-3">
+                            <a href="{{ url_for('docket.forgot_password') }}">Forgot password?</a>
                             <a href="#" id="show-change-password">Change Password</a>
                         </div>
-                        
+
                         <div class="text-center mt-3">
-                            <small class="text-muted">Demo: admin@docketron.com / admin123</small>
+                            <small class="text-muted">Use the credentials provided by your EngineerIP administrator.</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Change Password Form -->
                 <div id="change-password-form" class="form-hidden">
                     <div class="auth-header">
@@ -294,7 +295,7 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Update Password</button>
                         </form>
-                        
+
                         <div class="auth-switch">
                             <a href="#" id="show-login">Back to Login</a>
                         </div>
@@ -304,7 +305,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('login-form');
@@ -343,16 +344,16 @@
                 newPassword.addEventListener('input', function() {
                     const password = this.value;
                     let strength = 0;
-                    
+
                     if (password.length >= 8) strength++;
                     if (/[a-z]/.test(password)) strength++;
                     if (/[A-Z]/.test(password)) strength++;
                     if (/[0-9]/.test(password)) strength++;
                     if (/[^a-zA-Z0-9]/.test(password)) strength++;
-                    
+
                     // Reset classes
                     passwordStrength.className = 'password-strength';
-                    
+
                     if (password.length === 0) {
                         passwordStrength.style.width = '0';
                     } else if (strength <= 2) {

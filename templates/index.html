@@ -2,20 +2,18 @@
 {% block body %}
 
 
-<script>const carousel = new bootstrap.Carousel('#hero-carousel', {
-    interval: 6000, // Default interval for all slides
-    pause: false,   // Disable pause on hover
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const heroElement = document.getElementById('hero-carousel');
+  if (!heroElement || !window.bootstrap) return;
+  const carousel = bootstrap.Carousel.getOrCreateInstance(heroElement, {
+    interval: 6000,
+    pause: false,
   });
-
-  // Optional: Change interval for specific slides
-  carousel._element.addEventListener('slide.bs.carousel', (event) => {
-    if (event.from === 0) { // First slide
-      carousel._config.interval = 7000; // 6 seconds
-    } else {
-      carousel._config.interval = 3000; // 3 seconds for other slides
-    }
+  heroElement.addEventListener('slide.bs.carousel', (event) => {
+    carousel._config.interval = event.from === 0 ? 7000 : 3000;
   });
-
+});
 </script>
 
 
@@ -28,9 +26,9 @@
       <div class="carousel-item active">
         <div class="carousel-container" style="width: 100%; position: relative;">
           <!-- Video Background -->
-          <video autoplay muted loop id="video-background"
+          <video autoplay muted loop playsinline preload="metadata" poster="{{ url_for('static', filename='img/bg.jpg') }}" id="video-background"
             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1;">
-            <source src="/static/img/video/legal.mp4" type="video/mp4">
+            <source src="{{ url_for('static', filename='img/video/legal.mp4') }}" type="video/mp4">
             Your browser does not support the video tag.
           </video>
           <!-- Content Overlay -->
@@ -277,7 +275,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 120vh;
+      min-height: 72vh;
       background-image: url('/static/img/bg-01.png');
       /* Replace with your image path */
       background-size: cover;
@@ -326,9 +324,9 @@
   </style>
 
 
-  <div class="counter-container" style="background-image: url('/static/img/bg-01.png'); min-height: 120vh;">
-    
-    
+  <div class="counter-container" style="background-image: url('/static/img/bg-01.png'); min-height: 72vh;">
+
+
     <!-- Samples slider -->
     <div class="swiper init-swiper">
       <script type="application/json" class="swiper-config">
@@ -367,7 +365,7 @@
 
           <div class="testimonial-item  border border-danger rounded p-1"
             style="justify-content: center; display: flex;">
-            <img src="static/img/sam/demo1.jpg" class="sample img-fluid" alt="">
+            <img src="{{ url_for('static', filename='img/sam/demo1.jpg') }}" class="sample img-fluid" loading="lazy" alt="Patent search sample report">
 
           </div>
 
@@ -376,7 +374,7 @@
         <div class="swiper-slide">
           <div class="testimonial-item  border border-danger rounded p-1"
             style="justify-content: center; display: flex;">
-            <img src="static/img/sam/demo2.jpg" class="sample img-fluid" alt="">
+            <img src="{{ url_for('static', filename='img/sam/demo2.jpg') }}" class="sample img-fluid" loading="lazy" alt="Patent analysis sample report">
 
           </div>
         </div><!-- End testimonial item -->
@@ -384,7 +382,7 @@
         <div class="swiper-slide">
           <div class="testimonial-item  border border-danger rounded p-1"
             style="justify-content: center; display: flex;">
-            <img src="static/img/sam/demo3.jpg" class="sample img-fluid" alt="">
+            <img src="{{ url_for('static', filename='img/sam/demo3.jpg') }}" class="sample img-fluid" loading="lazy" alt="Patent drawings sample">
 
           </div>
         </div><!-- End testimonial item -->
@@ -392,7 +390,7 @@
         <div class="swiper-slide">
           <div class="testimonial-item  border border-danger rounded p-1"
             style="justify-content: center; display: flex;">
-            <img src="static/img/sam/demo4.jpg" class="sample img-fluid" alt="">
+            <img src="{{ url_for('static', filename='img/sam/demo4.jpg') }}" class="sample img-fluid" loading="lazy" alt="Trademark report sample">
 
           </div>
         </div><!-- End testimonial item -->
@@ -401,10 +399,10 @@
       <div class="swiper-pagination"></div>
     </div>
 
-    
-    
-    
-    
+
+
+
+
     <!-- Project Counter Box -->
     <div class="counter-box">
       <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="#1d72b8" viewBox="0 0 24 24">
@@ -453,7 +451,7 @@
 
 
 
-    
+
 
   </div>
 
@@ -649,7 +647,7 @@
 
               <div class="col-lg-8 mb-4 mb-lg-0 d-flex">
                 <div class="ratio ratio-16x9 w-100 rounded shadow position-relative align-self-stretch">
-                  <video class="w-100 h-100 d-none rounded-3" muted controls>
+                  <video class="w-100 h-100 d-none rounded-3" muted controls playsinline preload="none">
                     <source src="{{testimonies.video}}" type="video/mp4" />
                   </video>
                   <div

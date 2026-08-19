@@ -19,13 +19,13 @@ class pages(Base):
     content = db.Column(db.Text)
     sam1 = db.Column(db.String(50))
     sam2 = db.Column(db.String(50))
-    sam3 = db.Column(db.String(50))    
+    sam3 = db.Column(db.String(50))
     content2 = db.Column(db.Text)
     link = db.Column(db.String(50))
 
 # Add other models (blogs, query) similarly...
 
-# Pulling data For BLOGS 
+# Pulling data For BLOGS
 
 class blogs(Base):
     meta = db.Column(db.String(50), primary_key = False)
@@ -39,7 +39,7 @@ class blogs(Base):
     link = db.Column(db.String(50), primary_key = False)
     date = db.Column(db.DateTime, primary_key = False)
 
-# DB class For querry model 
+# DB class For querry model
 
 class query(Base):
     srno = db.Column(db.Integer, primary_key = True)
@@ -49,7 +49,7 @@ class query(Base):
     message = db.Column(db.String, primary_key = False)
 
 
-# DB class For testomony 
+# DB class For testomony
 
 class testomony(Base):
     srno = db.Column(db.Integer, primary_key = True)
@@ -80,9 +80,9 @@ class campaignrecipient(Base):
 
 
 # models.py
-class Template(Base): 
+class Template(Base):
     __tablename__ = 'template'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     subject = db.Column(db.String(255), nullable=False)
@@ -94,7 +94,7 @@ class Template(Base):
 
 class Contact(Base):
     __tablename__ = 'contact'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     first_name = db.Column(db.String(100))
@@ -102,12 +102,12 @@ class Contact(Base):
     custom_id = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationships
     datasets = db.relationship('DatasetContact', back_populates='contact')
     campaign_recipients = db.relationship('CampaignRecipient', back_populates='contact')
     unsubscribes = db.relationship('Unsubscriber', back_populates='contact')
-    
+
     @validates('email')
     def validate_email(self, key, email):
         if not email or '@' not in email:
@@ -116,26 +116,26 @@ class Contact(Base):
 
 class Unsubscriber(Base):
     __tablename__ = 'unsubscriber'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('contact.id'), nullable=False)
     campaign_id = db.Column(db.Integer, db.ForeignKey('campaign.id'))
     reason = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     contact = db.relationship('Contact', back_populates='unsubscribes')
     campaign = db.relationship('Campaign')
 
 class Dataset(Base):
     __tablename__ = 'dataset'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     record_count = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     contacts = db.relationship('DatasetContact', back_populates='dataset')
     campaigns = db.relationship('Campaign', back_populates='dataset')
@@ -144,30 +144,30 @@ class Dataset(Base):
 # The relationship b/w the dataset and contact
 class DatasetContact(Base):
     __tablename__ = 'dataset_contact'
-    
+
     dataset_id = db.Column(db.Integer, db.ForeignKey('dataset.id'), primary_key=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('contact.id'), primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     dataset = db.relationship('Dataset', back_populates='contacts')
     contact = db.relationship('Contact', back_populates='datasets')
 
 class Campaign(Base):
     __tablename__ = 'campaign'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     sender_email = db.Column(db.String(255), nullable=False)
     dataset_id = db.Column(db.Integer, db.ForeignKey('dataset.id'), nullable=False)
     start_date = db.Column(db.DateTime, nullable=False)
-    next_run = db.Column(db.DateTime, nullable=False)
-    status = db.Column(db.Enum('active', 'paused', 'completed', name='status_enum'), 
+    next_run = db.Column(db.DateTime, nullable=True)
+    status = db.Column(db.Enum('active', 'paused', 'completed', name='status_enum'),
                       default='active')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completion = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
-    
+
     # Relationships
     emails = db.relationship('CampaignEmail', backref='campaign', cascade='all, delete-orphan', order_by='CampaignEmail.sequence_order')
     dataset = db.relationship('Dataset', back_populates='campaigns')
@@ -180,7 +180,7 @@ class Campaign(Base):
             "name": self.name,
             "status": self.status,
             "start_date": self.start_date.isoformat() if self.start_date else None,
-            "next_run": self.next_run,
+            "next_run": self.next_run.isoformat() if self.next_run else None,
             "completion": self.completion,
             "dataset_id": self.dataset_id,
             "dataset_name": self.dataset.name if self.dataset else None,
@@ -188,7 +188,7 @@ class Campaign(Base):
             "recipient_count": len(self.recipients),
             "unsubscribes": len(self.unsubscribes),
         }
-    
+
     @validates('sender_email')
     def validate_sender_email(self, key, email):
         if not email or '@' not in email:
@@ -221,7 +221,7 @@ class CampaignEmail(db.Model):
 
 class CampaignRecipient(Base):
     __tablename__ = 'campaign_recipient'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     campaign_id = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('contact.id'), nullable=False)
@@ -232,14 +232,21 @@ class CampaignRecipient(Base):
     opened_at = db.Column(db.DateTime)
     unsubscribed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     # Relationships
     campaign = db.relationship('Campaign', back_populates='recipients')
     contact = db.relationship('Contact', back_populates='campaign_recipients')
-    
+
     # Unique constraint
     __table_args__ = (
-        db.UniqueConstraint('campaign_id', 'contact_id', name='_campaign_contact_uc'),
+        # One delivery record per campaign, contact, and sequence email.
+        # Including email_index is essential for follow-up campaigns.
+        db.UniqueConstraint(
+            'campaign_id',
+            'contact_id',
+            'email_index',
+            name='_campaign_contact_email_uc',
+        ),
     )
 
 
@@ -251,7 +258,7 @@ class CampaignRecipient(Base):
 
 
 
-# Helper functions for pages 
+# Helper functions for pages
 def content(slug):
     page = pages.query.filter_by(link=slug).first()  # Query your database model (assuming 'pages' is your model)
     return page  # Ensure to return a dictionary

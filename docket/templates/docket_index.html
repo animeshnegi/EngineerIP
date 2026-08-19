@@ -1,281 +1,164 @@
 {% extends "d-layout.html" %}
+{% block title %}Docket overview | EngineerIP{% endblock %}
+{% block page_heading %}Docket overview{% endblock %}
 {% block body %}
+<section class="docket-hero" aria-labelledby="docketHeroTitle">
+    <div class="docket-hero-content">
+        <h1 id="docketHeroTitle">Good to see you, {{ user_name|default('there')|e }}.</h1>
+        <p>Your IP portfolio, deadlines, and case activity are in one clear view. Stay ahead of every filing date and response window.</p>
+    </div>
+    <div class="docket-hero-date"><i class="bi bi-calendar3 me-1"></i><span id="todayLabel">Loading date…</span></div>
+</section>
 
+<section class="docket-stat-grid" aria-label="Portfolio summary">
+    <article class="docket-stat-card">
+        <span class="docket-stat-icon"><i class="bi bi-briefcase"></i></span>
+        <div class="docket-stat-label">Total cases</div>
+        <div class="docket-stat-value" id="totalCases">—</div>
+    </article>
+    <article class="docket-stat-card stat-success">
+        <span class="docket-stat-icon"><i class="bi bi-activity"></i></span>
+        <div class="docket-stat-label">Active cases</div>
+        <div class="docket-stat-value" id="activeCases">—</div>
+    </article>
+    <article class="docket-stat-card stat-danger">
+        <span class="docket-stat-icon"><i class="bi bi-exclamation-triangle"></i></span>
+        <div class="docket-stat-label">Overdue deadlines</div>
+        <div class="docket-stat-value" id="overdueDeadlines">—</div>
+    </article>
+    <article class="docket-stat-card stat-warning">
+        <span class="docket-stat-icon"><i class="bi bi-clock-history"></i></span>
+        <div class="docket-stat-label">Next 30 days</div>
+        <div class="docket-stat-value" id="upcomingDeadlines">—</div>
+    </article>
+</section>
 
-
-    <div class="row">
-
-
-
-        <div class="col-lg-9">
-            <!-- Case Type Toggle -->
-            <div class="case-toggle mb-4">
-                <button class="btn btn-primary active" data-type="all">All Cases</button>
-                <button class="btn btn-outline-primary" data-type="patent">Patent Cases</button>
-                <button class="btn btn-outline-primary" data-type="trademark">Trademark Cases</button>
-                <button class="btn btn-outline-primary" data-type="design_patent">Design Patents</button>
-                <button class="btn btn-outline-primary" data-type="pct_application">PCT Applications</button>
+<div class="docket-dashboard-grid">
+    <section class="docket-panel" aria-labelledby="casesHeading">
+        <div class="docket-panel-header">
+            <div>
+                <h2 id="casesHeading">IP cases</h2>
+                <p>Search and open a case to view its deadlines and history.</p>
             </div>
-
-            <!-- Filter Section -->
-            <div class="filter-section mb-3 p-3 bg-light rounded">
-                <div class="row">
-                    <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        <select class="form-select form-select-sm" id="statusFilter">
-                            <option value="">All Statuses</option>
-                            <option value="draft">Draft</option>
-                            <option value="filed">Filed</option>
-                            <option value="examination">Examination</option>
-                            <option value="allowed">Allowed</option>
-                            <option value="granted">Granted</option>
-                            <option value="registered">Registered</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Date Range</label>
-                        <select class="form-select form-select-sm" id="dateFilter">
-                            <option value="">All Dates</option>
-                            <option value="last30">Last 30 Days</option>
-                            <option value="last90">Last 90 Days</option>
-                            <option value="this_year">This Year</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Fee Status</label>
-                        <select class="form-select form-select-sm" id="feeStatusFilter">
-                            <option value="">All</option>
-                            <option value="paid">Paid</option>
-                            <option value="unpaid">Unpaid</option>
-                            <option value="overdue">Overdue</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Search</label>
-                        <input type="text" class="form-control form-control-sm" id="searchFilter"
-                            placeholder="Search cases, application numbers...">
-                    </div>
+            <a class="btn btn-sm btn-primary rounded-3" href="{{ url_for('docket.addcase') }}"><i class="bi bi-cloud-arrow-up me-1"></i>Upload</a>
+        </div>
+        <div class="docket-panel-body">
+            <div class="docket-filter-bar" role="search">
+                <div class="docket-search">
+                    <i class="bi bi-search"></i>
+                    <input class="form-control" id="caseSearch" type="search" placeholder="Search case, application, or title" autocomplete="off">
                 </div>
+                <select class="form-select" id="caseTypeFilter" aria-label="Filter by case type" style="max-width: 170px">
+                    <option value="all">All types</option>
+                    <option value="patent">Patents</option>
+                    <option value="trademark">Trademarks</option>
+                    <option value="design_patent">Design patents</option>
+                    <option value="pct_application">PCT applications</option>
+                </select>
+                <select class="form-select" id="caseStatusFilter" aria-label="Filter by case status" style="max-width: 160px">
+                    <option value="all">All statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="filed">Filed</option>
+                    <option value="pending">Pending</option>
+                    <option value="examination">Examination</option>
+                    <option value="allowed">Allowed</option>
+                    <option value="granted">Granted</option>
+                    <option value="registered">Registered</option>
+                    <option value="appeal">Appeal</option>
+                </select>
             </div>
-
-            <!-- Cases Table -->
-            <div class="table-container">
-                <table class="table table-hover table-striped" id="casesTable">
-                    <thead id="tableHeader" class="table-light">
-                        <!-- Dynamic headers will be inserted here -->
+            <div class="docket-table-wrap">
+                <table class="docket-table" aria-describedby="casesHeading">
+                    <thead>
+                        <tr>
+                            <th>Case</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Filing date</th>
+                            <th>Deadlines</th>
+                            <th><span class="visually-hidden">Actions</span></th>
+                        </tr>
                     </thead>
-                    <tbody id="casesContainer">
-                        <!-- Cases will be loaded here -->
+                    <tbody id="casesTableBody">
+                        <tr><td colspan="6"><div class="docket-empty"><div class="spinner-border spinner-border-sm text-primary" role="status"></div><span class="ms-2">Loading cases…</span></div></td></tr>
                     </tbody>
                 </table>
-
-                <!-- Loading Indicator -->
-                <div class="loading-indicator text-center py-3 d-none" id="loadingIndicator">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Loading more cases...</p>
-                </div>
-
-                <!-- No Results Message -->
-                <div class="no-results text-center py-5 d-none" id="noResults">
-                    <i class="bi bi-inbox display-4 text-muted"></i>
-                    <p class="mt-3 text-muted">No cases found matching your criteria.</p>
+            </div>
+            <div class="docket-pagination">
+                <span id="casePaginationLabel">Loading…</span>
+                <div class="docket-pagination-actions">
+                    <button type="button" id="previousPage" aria-label="Previous page"><i class="bi bi-chevron-left"></i></button>
+                    <button type="button" id="nextPage" aria-label="Next page"><i class="bi bi-chevron-right"></i></button>
                 </div>
             </div>
         </div>
-        <!-- Notification Modal -->
-        <div class="modal fade" id="notificationModal" tabindex="-1">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="notificationModalTitle">Case Details & Timeline</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row">
-                            <!-- Case Details -->
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Case Information</h6>
-                                    </div>
-                                    <div class="card-body" id="caseDetails">
-                                        <!-- Case details will be populated here -->
-                                    </div>
-                                </div>
+    </section>
 
-                                <!-- Upcoming Deadlines -->
-                                <div class="card mt-3">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Upcoming Deadlines</h6>
-                                    </div>
-                                    <div class="card-body" id="deadlinesList">
-                                        <!-- Deadlines will be populated here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Timeline -->
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Case Timeline</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="timeline" id="caseTimeline">
-                                            <!-- Timeline events will be populated here -->
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Recent Office Actions -->
-                                <div class="card mt-3">
-                                    <div class="card-header">
-                                        <h6 class="mb-0">Recent Office Actions</h6>
-                                    </div>
-                                    <div class="card-body" id="officeActionsList">
-                                        <!-- Office actions will be populated here -->
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" id="scheduleNotificationBtn">Schedule
-                            Notification</button>
-                    </div>
+    <aside>
+        <section class="docket-panel" aria-labelledby="deadlinesHeading">
+            <div class="docket-panel-header">
+                <div>
+                    <h2 id="deadlinesHeading">Upcoming deadlines</h2>
+                    <p>Your next actions, sorted by date.</p>
+                </div>
+                <i class="bi bi-calendar2-check text-primary fs-5"></i>
+            </div>
+            <div class="docket-panel-body">
+                <div class="docket-deadline-list" id="deadlinesList">
+                    <div class="docket-empty"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></div>
                 </div>
             </div>
-        </div>
+        </section>
 
-
-
-
-        <!-- Right Sidebar - Deadlines & Status -->
-        <div class="col-lg-3">
-            <!-- Critical Deadlines -->
-            <div class="card mb-4">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Critical Deadlines (Next 7 Days)
-                    </h5>
+        <section class="docket-panel" aria-labelledby="activityHeading">
+            <div class="docket-panel-header">
+                <div>
+                    <h2 id="activityHeading">Recent activity</h2>
+                    <p>The latest status movement in your portfolio.</p>
                 </div>
-                <div class="card-body">
-                    <!-- Deadline 1 -->
-                    <div class="deadline-card critical mb-3">
-                        <div class="card">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="card-title mb-1">Office Action Response</h6>
-                                    <span class="badge bg-danger">3 Days</span>
-                                </div>
-                                <p class="card-text small mb-1">Case: Automated Docketing System</p>
-                                <p class="card-text small text-muted">Due: Nov 20, 2023</p>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#timelineModal">View Timeline</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Deadline 2 -->
-                    <div class="deadline-card critical mb-3">
-                        <div class="card">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="card-title mb-1">Statement of Use</h6>
-                                    <span class="badge bg-warning">6 Days</span>
-                                </div>
-                                <p class="card-text small mb-1">Case: TechBrand Pro</p>
-                                <p class="card-text small text-muted">Due: Nov 23, 2023</p>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#timelineModal">View Timeline</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Deadline 3 -->
-                    <div class="deadline-card upcoming">
-                        <div class="card">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="card-title mb-1">Maintenance Fee</h6>
-                                    <span class="badge bg-info">14 Days</span>
-                                </div>
-                                <p class="card-text small mb-1">Case: Quantum Encryption Method</p>
-                                <p class="card-text small text-muted">Due: Dec 01, 2023</p>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
-                                    data-bs-target="#timelineModal">View Timeline</button>
-                            </div>
-                        </div>
-                    </div>
+                <i class="bi bi-lightning-charge text-primary fs-5"></i>
+            </div>
+            <div class="docket-panel-body">
+                <div class="docket-activity-list" id="activityList">
+                    <div class="docket-empty"><span class="spinner-border spinner-border-sm text-primary" role="status"></span></div>
                 </div>
             </div>
+        </section>
 
-            <!-- Recent Status Changes -->
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Status Changes</h5>
+        <section class="docket-panel">
+            <div class="docket-panel-header">
+                <div>
+                    <h2>Automation status</h2>
+                    <p>Case uploads and background processing.</p>
                 </div>
-                <div class="card-body">
-                    <!-- Status Change 1 -->
-                    <div class="timeline-item">
-                        <h6>Patent Granted</h6>
-                        <p class="small mb-1">Case: Automated Docketing System</p>
-                        <p class="small text-muted">Nov 15, 2023</p>
-                    </div>
-
-                    <!-- Status Change 2 -->
-                    <div class="timeline-item">
-                        <h6>Office Action Received</h6>
-                        <p class="small mb-1">Case: TechBrand Pro</p>
-                        <p class="small text-muted">Nov 14, 2023</p>
-                    </div>
-
-                    <!-- Status Change 3 -->
-                    <div class="timeline-item">
-                        <h6>Application Published</h6>
-                        <p class="small mb-1">Case: EcoSolutions</p>
-                        <p class="small text-muted">Nov 10, 2023</p>
-                    </div>
+            </div>
+            <div class="docket-panel-body">
+                <div class="docket-automation">
+                    <span class="docket-status-dot" id="automationDot"></span>
+                    <span id="automationLabel">Checking automation…</span>
                 </div>
+            </div>
+        </section>
+    </aside>
+</div>
+
+<div class="modal fade docket-modal" id="caseDetailsModal" tabindex="-1" aria-labelledby="caseDetailsTitle" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="small text-white-50" id="caseDetailsNumber">Case details</div>
+                    <h2 class="modal-title h5" id="caseDetailsTitle">Loading case…</h2>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="caseDetailsBody">
+                <div class="text-center py-5"><span class="spinner-border text-primary" role="status"></span></div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Timeline Modal -->
-<div class="modal fade" id="timelineModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Case Timeline: Automated Docketing System</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <h6>Application Filed</h6>
-                        <p class="small text-muted">March 15, 2023</p>
-                    </div>
-                    <div class="timeline-item">
-                        <h6>First Office Action</h6>
-                        <p class="small text-muted">June 10, 2023</p>
-                    </div>
-                    <div class="timeline-item critical">
-                        <h6>Office Action Response Due</h6>
-                        <p class="small text-muted">November 20, 2023</p>
-                    </div>
-                    <div class="timeline-item">
-                        <h6>Expected Grant Date</h6>
-                        <p class="small text-muted">February 15, 2024</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/docket.js') }}"></script>
 {% endblock %}
