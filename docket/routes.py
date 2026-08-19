@@ -2152,7 +2152,7 @@ def _case_uspto_data(case):
         return {}
 
 
-def _serialize_case(case, include_counts=True):
+def _serialize_case(case, include_counts=True, include_uspto_data=False):
     payload = {
         'id': case.id,
         'case_number': case.case_number,
@@ -2177,7 +2177,7 @@ def _serialize_case(case, include_counts=True):
         'actual_fees': case.actual_fees or 0,
         'created_at': _iso(case.created_at),
         'updated_at': _iso(case.updated_at),
-        'trademark_data': _case_uspto_data(case) if _enum_value(case.type) == 'trademark' else {},
+        'trademark_data': _case_uspto_data(case) if include_uspto_data and _enum_value(case.type) == 'trademark' else {},
         'coming_soon': _enum_value(case.type) == 'patent',
     }
     if include_counts:
@@ -2354,7 +2354,7 @@ def get_case_details(case_id):
 
     return jsonify({
         'success': True,
-        'case': _serialize_case(case),
+        'case': _serialize_case(case, include_uspto_data=True),
         'deadlines': [_serialize_deadline(item) for item in deadlines],
         'status_history': [
             {
